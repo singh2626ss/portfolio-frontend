@@ -13,6 +13,9 @@ import {
   Zap,
   Activity
 } from 'lucide-react';
+import HimanshiImg from './1743038871929.jpeg';
+import SaranshImg from './IMG_2192.jpg';
+import flowchart from './FLOWCHART.png'; // Ensure this resolves to a valid string path
 
 
 const AboutPage = () => {
@@ -25,7 +28,7 @@ const AboutPage = () => {
       github: 'https://github.com/singh2626ss',
       linkedin: 'https://www.linkedin.com/in/saranshsinghdollar/',
       email: 'singh2626.ss@gmail.com',
-      image: 'IMG_2192.jpg',
+      image: SaranshImg,
       quote: '“If it helps even one person feel more confident about their money, it’s worth building.”'
     },
     {
@@ -36,7 +39,7 @@ const AboutPage = () => {
       github: 'https://github.com/himanshikushwaha',
       linkedin: 'https://www.linkedin.com/in/himanshikushwaha/',
       email: 'himanshikushwaha305@gmail.com',
-      image: '1743038871929.jpeg',
+      image: HimanshiImg,
       quote: '“Good design should help you think less and do more.”'
     }
   ];
@@ -222,7 +225,7 @@ const AboutPage = () => {
 
   <div className="flex justify-center">
     <img 
-      src="FLOWCHART.png" 
+      src={flowchart} // Use curly braces to correctly pass the string value
       alt="Agent Workflow Diagram" 
       className="w-full max-w-6xl rounded-2xl border border-neutral-200 shadow-lg"
     />
