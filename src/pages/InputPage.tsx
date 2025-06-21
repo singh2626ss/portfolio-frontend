@@ -12,7 +12,8 @@ import {
   Minus,
   Brain,
   BarChart3,
-  Activity
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 
 interface StockHolding {
@@ -40,6 +41,8 @@ export default function InputPage() {
     currentSavings: '',
     holdings: [{ symbol: '', quantity: 0, purchasePrice: 0 }]
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -77,11 +80,67 @@ export default function InputPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Navigate to dashboard with analysis
-    navigate('/dashboard');
+    setIsLoading(true);
+    setError(null);
+    
+    // Validate required fields
+    if (!formData.riskTolerance || !formData.investmentGoals || !formData.timeHorizon) {
+      setError('Please fill in all required fields.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.holdings.some(holding => !holding.symbol || !holding.quantity || !holding.purchasePrice)) {
+      setError('Please fill in all portfolio details.');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      // Prepare the request payload
+      const payload = {
+        portfolio: formData.holdings.map(holding => ({
+          symbol: holding.symbol,
+          quantity: parseInt(holding.quantity.toString()),
+          purchase_price: parseFloat(holding.purchasePrice.toString())
+        })),
+        risk_tolerance: formData.riskTolerance,
+        investment_goals: [formData.investmentGoals],
+        time_horizon: formData.timeHorizon
+      };
+
+      console.log('Sending payload:', JSON.stringify(payload, null, 2));
+
+      // Make API call to backend
+      const response = await fetch('https://portfolio-backend-959021211199.us-central1.run.app/analyze-portfolio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Success response:', result);
+      
+      // Navigate to dashboard with the API response data
+      navigate('/dashboard', { state: { result } });
+    } catch (error) {
+      console.error('Error calling API:', error);
+      setError(`Failed to analyze portfolio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -214,15 +273,18 @@ export default function InputPage() {
                 <h3 className="text-xl font-semibold text-neutral-900">Investment Goals</h3>
               </div>
               <p className="text-neutral-600">What are your primary investment objectives?</p>
-              <textarea
+              <select
                 name="investmentGoals"
                 value={formData.investmentGoals}
                 onChange={handleInputChange}
-                placeholder="e.g., Retirement planning, buying a house, children's education, wealth building..."
-                rows={4}
-                className="w-full bg-white border border-neutral-300 rounded-lg p-3 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 resize-none transition-colors"
+                className="w-full bg-white border border-neutral-300 rounded-lg p-3 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-colors"
                 required
-              />
+              >
+                <option value="">Select your investment goal</option>
+                <option value="growth">Growth - Maximize capital appreciation</option>
+                <option value="income">Income - Generate regular income</option>
+                <option value="capital_preservation">Capital Preservation - Protect principal</option>
+              </select>
             </div>
 
             {/* Time Horizon */}
@@ -240,9 +302,10 @@ export default function InputPage() {
                 required
               >
                 <option value="">Select time horizon</option>
-                <option value="short">Short-term (less than 2 years)</option>
-                <option value="medium">Medium-term (2-7 years)</option>
-                <option value="long">Long-term (7+ years)</option>
+                <option value="1-3 years">1-3 years</option>
+                <option value="3-5 years">3-5 years</option>
+                <option value="5-10 years">5-10 years</option>
+                <option value="10+ years">10+ years</option>
               </select>
             </div>
 
@@ -298,11 +361,21 @@ export default function InputPage() {
             <div className="pt-6 flex flex-col sm:flex-row gap-4">
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/25"
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/25"
               >
-                <Brain className="w-5 h-5" />
-                Generate AI Analysis
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Analyzing Portfolio...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="w-5 h-5" />
+                    Generate AI Analysis
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
               
               <Link
@@ -313,6 +386,17 @@ export default function InputPage() {
                 View Sample Analysis
               </Link>
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <span className="text-red-700 font-medium">Error</span>
+                </div>
+                <p className="text-red-600 mt-1">{error}</p>
+              </div>
+            )}
           </form>
         </motion.div>
 
