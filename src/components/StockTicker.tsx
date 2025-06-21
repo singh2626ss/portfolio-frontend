@@ -25,7 +25,7 @@ export default function StockTicker() {
       await Promise.all(
         SYMBOLS.map(async sym => {
           const res = await fetch(
-            `https://finnhub.io/api/v1/quote?symbol=${sym}&token=${import.meta.env.VITE_FINNHUB_API_KEY}`
+            `https://finnhub.io/api/v1/quote?symbol=${sym}&token=${import.meta.env.FINNHUB_API_KEY}`
           )
           if (!mounted) return
           if (res.ok) {
