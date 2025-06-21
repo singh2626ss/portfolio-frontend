@@ -71,6 +71,33 @@ const Dashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
+  // Load data from localStorage or use passed data
+  const [dashboardData, setDashboardData] = useState(() => {
+    const savedData = localStorage.getItem('dashboardData');
+    return result || (savedData ? JSON.parse(savedData) : null);
+  });
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (result) {
+      setDashboardData(result);
+      localStorage.setItem('dashboardData', JSON.stringify(result));
+    }
+  }, [result]);
+
+  // Load chat messages from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    if (savedMessages) {
+      setChatMessages(JSON.parse(savedMessages));
+    }
+  }, []);
+
+  // Save chat messages to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+  }, [chatMessages]);
+
   // Helper functions for risk and sentiment colors
   const getRiskValue = (riskLevel: string) => {
     switch (riskLevel?.toLowerCase()) {
@@ -118,13 +145,13 @@ const Dashboard = () => {
   };
 
   // Enhanced Performance Data - Use the actual performance data from backend
-  const performanceData = result?.visualization_data?.performance ? {
-    labels: result.visualization_data.performance.x.map((date: string) => 
+  const performanceData = dashboardData?.visualization_data?.performance ? {
+    labels: dashboardData.visualization_data.performance.x.map((date: string) => 
       new Date(date).toLocaleDateString()
     ),
     datasets: [{
       label: 'Portfolio Value',
-      data: result.visualization_data.performance.y,
+      data: dashboardData.visualization_data.performance.y,
       borderColor: 'rgb(34, 197, 94)',
       backgroundColor: 'rgba(34, 197, 94, 0.1)',
       fill: true,
@@ -138,10 +165,10 @@ const Dashboard = () => {
   } : null;
 
   // Sector Allocation Data - Use the actual composition data from backend
-  const sectorData = result?.visualization_data?.composition ? {
-    labels: result.visualization_data.composition.labels,
+  const sectorData = dashboardData?.visualization_data?.composition ? {
+    labels: dashboardData.visualization_data.composition.labels,
     datasets: [{
-      data: result.visualization_data.composition.values,
+      data: dashboardData.visualization_data.composition.values,
       backgroundColor: [
         '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
         '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'
@@ -152,11 +179,11 @@ const Dashboard = () => {
   } : null;
 
   // Risk Gauge Data - Use the actual risk data from backend
-  const riskGaugeData = result?.visualization_data?.risk ? {
-    labels: result.visualization_data.risk.labels,
+  const riskGaugeData = dashboardData?.visualization_data?.risk ? {
+    labels: dashboardData.visualization_data.risk.labels,
     datasets: [{
-      data: result.visualization_data.risk.values,
-      backgroundColor: result.visualization_data.risk.values.map((val: number) => 
+      data: dashboardData.visualization_data.risk.values,
+      backgroundColor: dashboardData.visualization_data.risk.values.map((val: number) => 
         val > 0.2 ? '#EF4444' : val > 0.1 ? '#F59E0B' : '#10B981'
       ),
       borderWidth: 0
@@ -164,16 +191,16 @@ const Dashboard = () => {
   } : null;
 
   // Sentiment Gauge Data - Use the actual sentiment gauge from backend
-  const sentimentGaugeData = result?.visualization_data?.sentiment ? {
-    value: result.visualization_data.sentiment.value,
-    min: result.visualization_data.sentiment.min,
-    max: result.visualization_data.sentiment.max,
-    thresholds: result.visualization_data.sentiment.thresholds
+  const sentimentGaugeData = dashboardData?.visualization_data?.sentiment ? {
+    value: dashboardData.visualization_data.sentiment.value,
+    min: dashboardData.visualization_data.sentiment.min,
+    max: dashboardData.visualization_data.sentiment.max,
+    thresholds: dashboardData.visualization_data.sentiment.thresholds
   } : null;
 
   // Volatility Data - Use the actual volatility data from backend
-  const volatilityData = result?.risk_analysis?.volatility_data ? 
-    Object.entries(result.risk_analysis.volatility_data).map(([symbol, data]: [string, any]) => ({
+  const volatilityData = dashboardData?.risk_analysis?.volatility_data ? 
+    Object.entries(dashboardData.risk_analysis.volatility_data).map(([symbol, data]: [string, any]) => ({
       symbol: data.symbol,
       volatility: data.volatility,
       annualizedVolatility: data.annualized_volatility,
@@ -182,10 +209,10 @@ const Dashboard = () => {
     })) : [];
 
   // Sector Allocation Data - Use the actual sector data from backend
-  const sectorAllocationData = result?.risk_analysis?.sector_allocation ? {
-    labels: Object.keys(result.risk_analysis.sector_allocation),
+  const sectorAllocationData = dashboardData?.risk_analysis?.sector_allocation ? {
+    labels: Object.keys(dashboardData.risk_analysis.sector_allocation),
     datasets: [{
-      data: Object.values(result.risk_analysis.sector_allocation),
+      data: Object.values(dashboardData.risk_analysis.sector_allocation),
       backgroundColor: [
         '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
         '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'
@@ -196,114 +223,111 @@ const Dashboard = () => {
   } : null;
 
   // Enhanced Market Sentiment Data - Fixed to match backend structure
-  const sentimentData = result?.market_sentiment ? {
-    overall: result.market_sentiment.overall_sentiment,
-    strength: result.market_sentiment.sentiment_strength,
-    summary: result.market_sentiment.news_summary || 'Market sentiment analysis based on recent events and news sources.',
-    recentEvents: result.market_sentiment.recent_events?.portfolio_events || [],
-    totalEvents: result.market_sentiment.recent_events?.total_events || 0,
-    highImpactCount: result.market_sentiment.recent_events?.high_impact_count || 0,
-    symbolBreakdown: result.market_sentiment.symbol_breakdown || {},
-    trendAnalysis: result.market_sentiment.trend_analysis || {}
+  const sentimentData = dashboardData?.market_sentiment ? {
+    overall: dashboardData.market_sentiment.overall_sentiment,
+    strength: dashboardData.market_sentiment.sentiment_strength,
+    summary: dashboardData.market_sentiment.news_summary || 'Market sentiment analysis based on recent events and news sources.',
+    recentEvents: dashboardData.market_sentiment.recent_events?.portfolio_events || [],
+    totalEvents: dashboardData.market_sentiment.recent_events?.total_events || 0,
+    highImpactCount: dashboardData.market_sentiment.recent_events?.high_impact_count || 0,
+    symbolBreakdown: dashboardData.market_sentiment.symbol_breakdown || {},
+    trendAnalysis: dashboardData.market_sentiment.trend_analysis || {}
   } : null;
 
   // Portfolio Summary Data - Fixed to match backend structure
-  const portfolioSummary = result?.portfolio_summary ? {
-    totalPositions: result.portfolio_summary.number_of_positions,
-    positions: result.portfolio_summary.positions || [],
-    totalValue: result.performance_analysis?.current_value || 0,
-    totalCost: result.performance_analysis?.total_cost || 0,
-    totalReturn: result.performance_analysis?.total_return || 0,
-    returnPercentage: result.performance_analysis?.return_percentage || 0
+  const portfolioSummary = dashboardData?.portfolio_summary ? {
+    totalPositions: dashboardData.portfolio_summary.number_of_positions,
+    positions: dashboardData.portfolio_summary.positions || [],
+    totalValue: dashboardData.performance_analysis?.current_value || 0,
+    totalCost: dashboardData.performance_analysis?.total_cost || 0,
+    totalReturn: dashboardData.performance_analysis?.total_return || 0,
+    returnPercentage: dashboardData.performance_analysis?.return_percentage || 0
   } : null;
 
   // AI Recommendations Data - Fixed to match backend structure (recommendations field)
-  const aiRecommendations = result?.recommendations || [];
+  const aiRecommendations = dashboardData?.recommendations || [];
 
   // Portfolio metrics from API data only with 3 decimal places - Fixed to match backend structure
-  const portfolioMetrics = result?.performance_analysis ? [
+  const portfolioMetrics = dashboardData?.performance_analysis ? [
     {
       title: 'Total Portfolio Value',
-      value: `$${result.performance_analysis.current_value?.toLocaleString() || '0'}`,
-      change: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toFixed(3) || '0'}`,
-      changePercent: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
-      isPositive: result.performance_analysis.total_return >= 0,
+      value: `$${dashboardData.performance_analysis.current_value?.toLocaleString() || '0'}`,
+      change: `${dashboardData.performance_analysis.total_return >= 0 ? '+' : ''}$${dashboardData.performance_analysis.total_return?.toFixed(3) || '0'}`,
+      changePercent: `${dashboardData.performance_analysis.return_percentage >= 0 ? '+' : ''}${dashboardData.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
+      isPositive: dashboardData.performance_analysis.total_return >= 0,
       icon: DollarSign
     },
     {
       title: 'Total Return',
-      value: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toFixed(3) || '0'}`,
-      change: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
+      value: `${dashboardData.performance_analysis.total_return >= 0 ? '+' : ''}$${dashboardData.performance_analysis.total_return?.toFixed(3) || '0'}`,
+      change: `${dashboardData.performance_analysis.return_percentage >= 0 ? '+' : ''}${dashboardData.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
       changePercent: 'All Time',
-      isPositive: result.performance_analysis.total_return >= 0,
+      isPositive: dashboardData.performance_analysis.total_return >= 0,
       icon: Percent
     },
     {
       title: 'Risk Level',
-      value: result.risk_analysis?.risk_level?.charAt(0).toUpperCase() + result.risk_analysis?.risk_level?.slice(1) || 'Moderate',
+      value: dashboardData.risk_analysis?.risk_level?.charAt(0).toUpperCase() + dashboardData.risk_analysis?.risk_level?.slice(1) || 'Moderate',
       change: 'Risk Assessment',
       changePercent: 'Portfolio Risk',
-      isPositive: result.risk_analysis?.risk_level === 'low',
+      isPositive: dashboardData.risk_analysis?.risk_level === 'low',
       icon: Shield
     },
     {
       title: 'Market Sentiment',
-      value: result.market_sentiment?.overall_sentiment?.charAt(0).toUpperCase() + result.market_sentiment?.overall_sentiment?.slice(1) || 'Neutral',
-      change: `${(result.market_sentiment?.sentiment_strength * 100)?.toFixed(3) || '0'}%`,
+      value: dashboardData.market_sentiment?.overall_sentiment?.charAt(0).toUpperCase() + dashboardData.market_sentiment?.overall_sentiment?.slice(1) || 'Neutral',
+      change: `${(dashboardData.market_sentiment?.sentiment_strength * 100)?.toFixed(3) || '0'}%`,
       changePercent: 'Sentiment Strength',
-      isPositive: result.market_sentiment?.overall_sentiment === 'positive',
+      isPositive: dashboardData.market_sentiment?.overall_sentiment === 'positive',
       icon: TrendingUp
     }
   ] : [];
 
   // Check if we have any data to display - make it more permissive
-  const hasData = result && (
+  const hasData = dashboardData && (
     portfolioMetrics.length > 0 || 
     performanceData || 
     sectorData || 
     riskGaugeData ||
     sentimentData ||
     aiRecommendations.length > 0 ||
-    result.risk_analysis ||
-    result.performance_analysis ||
-    result.market_sentiment
+    dashboardData.risk_analysis ||
+    dashboardData.performance_analysis ||
+    dashboardData.market_sentiment
   );
 
   // AI Chat Functions
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const userMessage = chatInput.trim();
-    setChatInput('');
-    
-    // Add user message to chat
-    const userChatMessage: ChatMessage = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: userMessage,
+      content: chatInput,
       timestamp: new Date()
     };
-    setChatMessages(prev => [...prev, userChatMessage]);
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setIsChatLoading(true);
 
     try {
-      setIsChatLoading(true);
-      
       const response = await fetch('https://portfolio-backend-959021211199.us-central1.run.app/ai-insights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_question: userMessage,
+          user_message: chatInput,
           portfolio_data: {
             portfolio: portfolioSummary?.positions || [],
-            performance_analysis: result?.performance_analysis,
-            risk_analysis: result?.risk_analysis,
-            market_sentiment: result?.market_sentiment
+            performance_analysis: dashboardData?.performance_analysis,
+            risk_analysis: dashboardData?.risk_analysis,
+            market_sentiment: dashboardData?.market_sentiment
           },
           market_context: {
-            overall_sentiment: result?.market_sentiment?.overall_sentiment,
-            recent_events: result?.market_sentiment?.recent_events
+            overall_sentiment: dashboardData?.market_sentiment?.overall_sentiment,
+            recent_events: dashboardData?.market_sentiment?.recent_events
           }
         }),
       });
@@ -312,25 +336,26 @@ const Dashboard = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const result = await response.json();
       
-      // Add AI response to chat
-      const aiChatMessage: ChatMessage = {
+      const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: data.nlp_insight || data.response || 'I apologize, but I couldn\'t generate a response at this time.',
-        timestamp: new Date()
+        content: result.response,
+        timestamp: new Date(),
+        confidence: result.confidence
       };
-      setChatMessages(prev => [...prev, aiChatMessage]);
+
+      setChatMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorChatMessage: ChatMessage = {
+      const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
       };
-      setChatMessages(prev => [...prev, errorChatMessage]);
+      setChatMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsChatLoading(false);
     }
@@ -339,14 +364,34 @@ const Dashboard = () => {
   const refreshPortfolioData = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate refresh - in real app, you'd fetch new data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate refresh - in a real app, you'd call the API again
+      await new Promise(resolve => setTimeout(resolve, 2000));
       setLastUpdate(new Date());
+      
+      // Update localStorage with current timestamp
+      if (dashboardData) {
+        const updatedData = {
+          ...dashboardData,
+          last_updated: new Date().toISOString()
+        };
+        setDashboardData(updatedData);
+        localStorage.setItem('dashboardData', JSON.stringify(updatedData));
+      }
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Clear all data function
+  const clearAllData = () => {
+    localStorage.removeItem('dashboardData');
+    localStorage.removeItem('chatMessages');
+    setDashboardData(null);
+    setChatMessages([]);
+    // Redirect to input page
+    window.location.href = '/';
   };
 
   // Show empty state if no data
@@ -388,6 +433,14 @@ const Dashboard = () => {
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
+              </button>
+              <button
+                onClick={clearAllData}
+                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                title="Clear all data and start over"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>New Analysis</span>
               </button>
               <div className="text-sm text-neutral-600">
                 Last updated: {lastUpdate.toLocaleTimeString()}
@@ -432,7 +485,7 @@ const Dashboard = () => {
           {/* Top Row - Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Portfolio Performance */}
-            {(performanceData || result?.performance_analysis) && (
+            {(performanceData || dashboardData?.performance_analysis) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -511,7 +564,7 @@ const Dashboard = () => {
             )}
 
             {/* Sector Performance */}
-            {(sectorData || result?.risk_analysis?.sector_allocation) && (
+            {(sectorData || dashboardData?.risk_analysis?.sector_allocation) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -564,7 +617,7 @@ const Dashboard = () => {
           {/* Second Row - Risk and Sentiment */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Risk Analysis */}
-            {(riskGaugeData || result?.risk_analysis) && (
+            {(riskGaugeData || dashboardData?.risk_analysis) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -580,10 +633,10 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-neutral-700">Risk Level</span>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-sm font-semibold`} style={{ color: getRiskColor(result.risk_analysis.risk_level) }}>
-                        {result.risk_analysis.risk_level.toUpperCase()}
+                      <span className={`text-sm font-semibold`} style={{ color: getRiskColor(dashboardData.risk_analysis.risk_level) }}>
+                        {dashboardData.risk_analysis.risk_level.toUpperCase()}
                       </span>
-                      {result.risk_analysis.risk_level.toLowerCase() === 'low' ? (
+                      {dashboardData.risk_analysis.risk_level.toLowerCase() === 'low' ? (
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       ) : (
                         <AlertTriangle className="w-4 h-4 text-yellow-600" />
@@ -595,28 +648,28 @@ const Dashboard = () => {
                     <div 
                       className="h-2 rounded-full transition-all duration-500"
                       style={{ 
-                        width: `${getRiskValue(result.risk_analysis.risk_level)}%`,
-                        backgroundColor: getRiskColor(result.risk_analysis.risk_level)
+                        width: `${getRiskValue(dashboardData.risk_analysis.risk_level)}%`,
+                        backgroundColor: getRiskColor(dashboardData.risk_analysis.risk_level)
                       }}
                     ></div>
                   </div>
 
                   {/* Portfolio Volatility */}
-                  {result.risk_analysis.portfolio_volatility && (
+                  {dashboardData.risk_analysis.portfolio_volatility && (
                     <div className="p-4 bg-neutral-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-neutral-700">Portfolio Volatility</span>
                         <span className="text-sm font-semibold text-neutral-900">
-                          {(result.risk_analysis.portfolio_volatility * 100).toFixed(3)}%
+                          {(dashboardData.risk_analysis.portfolio_volatility * 100).toFixed(3)}%
                         </span>
                       </div>
                       <div className="w-full bg-neutral-200 rounded-full h-2">
                         <div 
                           className="h-2 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${Math.min(result.risk_analysis.portfolio_volatility * 1000, 100)}%`,
-                            backgroundColor: result.risk_analysis.portfolio_volatility > 0.2 ? '#EF4444' : 
-                                           result.risk_analysis.portfolio_volatility > 0.1 ? '#F59E0B' : '#10B981'
+                            width: `${Math.min(dashboardData.risk_analysis.portfolio_volatility * 1000, 100)}%`,
+                            backgroundColor: dashboardData.risk_analysis.portfolio_volatility > 0.2 ? '#EF4444' : 
+                                           dashboardData.risk_analysis.portfolio_volatility > 0.1 ? '#F59E0B' : '#10B981'
                           }}
                         ></div>
                       </div>
@@ -624,21 +677,21 @@ const Dashboard = () => {
                   )}
 
                   {/* Concentration Risk */}
-                  {result.risk_analysis.concentration_metrics && (
+                  {dashboardData.risk_analysis.concentration_metrics && (
                     <div className="p-4 bg-neutral-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-neutral-700">Concentration Risk (HHI)</span>
                         <span className="text-sm font-semibold text-neutral-900">
-                          {result.risk_analysis.concentration_metrics.hhi.toFixed(3)}
+                          {dashboardData.risk_analysis.concentration_metrics.hhi.toFixed(3)}
                         </span>
                       </div>
                       <div className="w-full bg-neutral-200 rounded-full h-2">
                         <div 
                           className="h-2 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${Math.min(result.risk_analysis.concentration_metrics.hhi * 100, 100)}%`,
-                            backgroundColor: result.risk_analysis.concentration_metrics.hhi > 0.5 ? '#EF4444' : 
-                                           result.risk_analysis.concentration_metrics.hhi > 0.25 ? '#F59E0B' : '#10B981'
+                            width: `${Math.min(dashboardData.risk_analysis.concentration_metrics.hhi * 100, 100)}%`,
+                            backgroundColor: dashboardData.risk_analysis.concentration_metrics.hhi > 0.5 ? '#EF4444' : 
+                                           dashboardData.risk_analysis.concentration_metrics.hhi > 0.25 ? '#F59E0B' : '#10B981'
                           }}
                         ></div>
                       </div>
@@ -646,21 +699,21 @@ const Dashboard = () => {
                   )}
 
                   {/* Top 3 Concentration */}
-                  {result.risk_analysis.concentration_metrics && (
+                  {dashboardData.risk_analysis.concentration_metrics && (
                     <div className="p-4 bg-neutral-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-neutral-700">Top 3 Concentration</span>
                         <span className="text-sm font-semibold text-neutral-900">
-                          {(result.risk_analysis.concentration_metrics.top_3_concentration * 100).toFixed(1)}%
+                          {(dashboardData.risk_analysis.concentration_metrics.top_3_concentration * 100).toFixed(1)}%
                         </span>
                       </div>
                       <div className="w-full bg-neutral-200 rounded-full h-2">
                         <div 
                           className="h-2 rounded-full transition-all duration-500"
                           style={{ 
-                            width: `${result.risk_analysis.concentration_metrics.top_3_concentration * 100}%`,
-                            backgroundColor: result.risk_analysis.concentration_metrics.top_3_concentration > 0.7 ? '#EF4444' : 
-                                           result.risk_analysis.concentration_metrics.top_3_concentration > 0.4 ? '#F59E0B' : '#10B981'
+                            width: `${dashboardData.risk_analysis.concentration_metrics.top_3_concentration * 100}%`,
+                            backgroundColor: dashboardData.risk_analysis.concentration_metrics.top_3_concentration > 0.7 ? '#EF4444' : 
+                                           dashboardData.risk_analysis.concentration_metrics.top_3_concentration > 0.4 ? '#F59E0B' : '#10B981'
                           }}
                         ></div>
                       </div>
@@ -671,7 +724,7 @@ const Dashboard = () => {
             )}
 
             {/* Market Sentiment */}
-            {(sentimentData || result?.market_sentiment) && (
+            {(sentimentData || dashboardData?.market_sentiment) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -702,11 +755,11 @@ const Dashboard = () => {
                   </div>
 
                   {/* Sentiment Distribution */}
-                  {result?.market_sentiment?.sentiment_distribution && (
+                  {dashboardData?.market_sentiment?.sentiment_distribution && (
                     <div className="p-4 bg-neutral-50 rounded-lg">
                       <h4 className="text-sm font-medium text-neutral-700 mb-3">Sentiment Distribution</h4>
                       <div className="space-y-2">
-                        {Object.entries(result.market_sentiment.sentiment_distribution).map(([sentiment, count]: [string, any]) => (
+                        {Object.entries(dashboardData.market_sentiment.sentiment_distribution).map(([sentiment, count]: [string, any]) => (
                           <div key={sentiment} className="flex items-center justify-between">
                             <span className="text-sm text-neutral-600 capitalize">{sentiment}</span>
                             <div className="flex items-center space-x-2">
@@ -714,7 +767,7 @@ const Dashboard = () => {
                                 <div 
                                   className="h-2 rounded-full"
                                   style={{ 
-                                    width: `${(count / (Object.values(result.market_sentiment.sentiment_distribution) as number[]).reduce((a: number, b: number) => a + b, 0)) * 100}%`,
+                                    width: `${(count / (Object.values(dashboardData.market_sentiment.sentiment_distribution) as number[]).reduce((a: number, b: number) => a + b, 0)) * 100}%`,
                                     backgroundColor: sentiment === 'positive' ? '#10B981' : 
                                                    sentiment === 'negative' ? '#EF4444' : '#6B7280'
                                   }}
@@ -729,11 +782,11 @@ const Dashboard = () => {
                   )}
 
                   {/* Trend Analysis */}
-                  {result?.market_sentiment?.trend_analysis && (
+                  {dashboardData?.market_sentiment?.trend_analysis && (
                     <div className="p-4 bg-neutral-50 rounded-lg">
                       <h4 className="text-sm font-medium text-neutral-700 mb-3">Trend Analysis</h4>
                       <div className="space-y-2">
-                        {Object.entries(result.market_sentiment.trend_analysis.trends).map(([trend, symbols]: [string, any]) => (
+                        {Object.entries(dashboardData.market_sentiment.trend_analysis.trends).map(([trend, symbols]: [string, any]) => (
                           <div key={trend} className="flex items-center justify-between">
                             <span className="text-sm text-neutral-600 capitalize">{trend}</span>
                             <span className="text-sm font-medium text-neutral-900">
@@ -752,7 +805,7 @@ const Dashboard = () => {
           {/* Third Row - News and Events */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Market News Summary */}
-            {(sentimentData || result?.market_sentiment) && (
+            {(sentimentData || dashboardData?.market_sentiment) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -791,10 +844,10 @@ const Dashboard = () => {
                   </div>
 
                   {/* Symbol Breakdown */}
-                  {result?.market_sentiment?.symbol_breakdown && (
+                  {dashboardData?.market_sentiment?.symbol_breakdown && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium text-neutral-700">Symbol Sentiment</h4>
-                      {Object.entries(result.market_sentiment.symbol_breakdown).map(([symbol, data]: [string, any]) => (
+                      {Object.entries(dashboardData.market_sentiment.symbol_breakdown).map(([symbol, data]: [string, any]) => (
                         <div key={symbol} className="p-3 bg-neutral-50 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-neutral-900">{symbol}</span>
@@ -852,7 +905,7 @@ const Dashboard = () => {
             )}
 
             {/* Recent Events */}
-            {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events) && (
+            {(sentimentData?.recentEvents || dashboardData?.market_sentiment?.recent_events) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -869,26 +922,26 @@ const Dashboard = () => {
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-neutral-600">Total Events</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {sentimentData?.totalEvents || result?.market_sentiment?.recent_events?.total_events || 0}
+                      {sentimentData?.totalEvents || dashboardData?.market_sentiment?.recent_events?.total_events || 0}
                     </p>
                   </div>
                   <div className="text-center p-4 bg-red-50 rounded-lg">
                     <p className="text-sm text-neutral-600">High Impact</p>
                     <p className="text-2xl font-bold text-red-600">
-                      {sentimentData?.highImpactCount || result?.market_sentiment?.recent_events?.high_impact_count || 0}
+                      {sentimentData?.highImpactCount || dashboardData?.market_sentiment?.recent_events?.high_impact_count || 0}
                     </p>
                   </div>
                   <div className="text-center p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-neutral-600">Stocks Covered</p>
                     <p className="text-2xl font-bold text-green-600">
-                      {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events?.portfolio_events || []).length}
+                      {(sentimentData?.recentEvents || dashboardData?.market_sentiment?.recent_events?.portfolio_events || []).length}
                     </p>
                   </div>
                 </div>
                 
                 {/* Events by Stock */}
                 <div className="space-y-6 max-h-[600px] overflow-y-auto">
-                  {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events?.portfolio_events || []).map((portfolioEvent: any, index: number) => (
+                  {(sentimentData?.recentEvents || dashboardData?.market_sentiment?.recent_events?.portfolio_events || []).map((portfolioEvent: any, index: number) => (
                     <div key={index} className="border border-neutral-200 rounded-xl p-5 hover:bg-neutral-50 transition-colors">
                       {/* Stock Header */}
                       <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-200">
@@ -999,7 +1052,7 @@ const Dashboard = () => {
           {/* New Row - Diversification Score and Individual Stock Volatility */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Diversification Score */}
-            {result?.risk_analysis?.diversification_score && (
+            {dashboardData?.risk_analysis?.diversification_score && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -1014,23 +1067,23 @@ const Dashboard = () => {
                   <div className="text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
                     <p className="text-sm text-neutral-600 mb-2">Diversification Score</p>
                     <p className="text-4xl font-bold text-green-600 mb-2">
-                      {result.risk_analysis.diversification_score.score}/100
+                      {dashboardData.risk_analysis.diversification_score.score}/100
                     </p>
                     <div className="w-full bg-neutral-200 rounded-full h-3">
                       <div 
                         className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${result.risk_analysis.diversification_score.score}%` }}
+                        style={{ width: `${dashboardData.risk_analysis.diversification_score.score}%` }}
                       ></div>
                     </div>
                     <p className="text-sm text-neutral-600 mt-2">
-                      {result.risk_analysis.diversification_score.assessment}
+                      {dashboardData.risk_analysis.diversification_score.assessment}
                     </p>
                   </div>
                   
-                  {result.risk_analysis.diversification_score.factors && (
+                  {dashboardData.risk_analysis.diversification_score.factors && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-semibold text-neutral-900">Key Factors:</h4>
-                      {result.risk_analysis.diversification_score.factors.map((factor: any, index: number) => (
+                      {dashboardData.risk_analysis.diversification_score.factors.map((factor: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
                           <span className="text-sm text-neutral-700">{factor.name}</span>
                           <span className={`text-sm font-medium ${
@@ -1108,7 +1161,7 @@ const Dashboard = () => {
           {/* Fourth Row - AI Recommendations and Forecasting */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* AI Recommendations */}
-            {(aiRecommendations.length > 0 || result?.recommendations) && (
+            {(aiRecommendations.length > 0 || dashboardData?.recommendations) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -1120,7 +1173,7 @@ const Dashboard = () => {
                   <span>AI Recommendations</span>
                 </h3>
                 <div className="space-y-4">
-                  {(aiRecommendations.length > 0 ? aiRecommendations : result?.recommendations || []).map((rec: any, index: number) => (
+                  {(aiRecommendations.length > 0 ? aiRecommendations : dashboardData?.recommendations || []).map((rec: any, index: number) => (
                     <div key={index} className="border border-neutral-200 rounded-lg p-4 hover:bg-neutral-50 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full`} 
@@ -1143,7 +1196,7 @@ const Dashboard = () => {
             )}
 
             {/* Portfolio Forecasting */}
-            {result?.visualization_data?.forecasting && (
+            {dashboardData?.visualization_data?.forecasting && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -1156,7 +1209,7 @@ const Dashboard = () => {
                 </h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4">
-                    {Object.entries(result.visualization_data.forecasting.scenarios).map(([scenario, data]: [string, any]) => (
+                    {Object.entries(dashboardData.visualization_data.forecasting.scenarios).map(([scenario, data]: [string, any]) => (
                       <div key={scenario} className="border border-neutral-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-sm font-semibold text-neutral-900 capitalize">
@@ -1188,7 +1241,7 @@ const Dashboard = () => {
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      <strong>Current Value:</strong> ${result.visualization_data.forecasting.current_value.toLocaleString()}
+                      <strong>Current Value:</strong> ${dashboardData.visualization_data.forecasting.current_value.toLocaleString()}
                     </p>
                     <p className="text-xs text-blue-700 mt-1">
                       Projections based on historical performance and market conditions
