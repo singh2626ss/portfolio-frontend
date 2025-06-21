@@ -13,7 +13,9 @@ import {
   Brain,
   BarChart3,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  Search
 } from 'lucide-react';
 
 interface StockHolding {
@@ -30,6 +32,134 @@ interface FormData {
   currentSavings: string;
   holdings: StockHolding[];
 }
+
+// Popular stocks data
+const POPULAR_STOCKS = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc. (Google)' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+  { symbol: 'TSLA', name: 'Tesla Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
+  { symbol: 'META', name: 'Meta Platforms Inc.' },
+  { symbol: 'NFLX', name: 'Netflix Inc.' },
+  { symbol: 'JPM', name: 'JPMorgan Chase & Co.' },
+  { symbol: 'JNJ', name: 'Johnson & Johnson' }
+];
+
+// Stock Dropdown Component
+interface StockDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+const StockDropdown: React.FC<StockDropdownProps> = ({ value, onChange, placeholder = "e.g., AAPL" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredStocks = POPULAR_STOCKS.filter(stock =>
+    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSelect = (symbol: string) => {
+    onChange(symbol);
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value.toUpperCase();
+    onChange(newValue);
+    setSearchTerm(newValue);
+    setIsOpen(true);
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.stock-dropdown')) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative stock-dropdown">
+      <div className="relative">
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          className="w-full bg-white border border-neutral-300 rounded-lg p-3 pr-10 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
+        >
+          <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <div className="p-2 border-b border-neutral-100">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                type="text"
+                placeholder="Search stocks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+          </div>
+          
+          <div className="py-1">
+            {filteredStocks.length > 0 ? (
+              filteredStocks.map((stock) => (
+                <button
+                  key={stock.symbol}
+                  type="button"
+                  onClick={() => handleSelect(stock.symbol)}
+                  className="w-full px-3 py-2 text-left hover:bg-neutral-50 flex items-center justify-between"
+                >
+                  <div>
+                    <div className="font-medium text-neutral-900">{stock.symbol}</div>
+                    <div className="text-sm text-neutral-500">{stock.name}</div>
+                  </div>
+                  {value === stock.symbol && (
+                    <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                  )}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-sm text-neutral-500">
+                No stocks found. Type to search or enter a custom symbol.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function InputPage() {
   const navigate = useNavigate();
@@ -99,41 +229,30 @@ export default function InputPage() {
     }
     
     try {
-      // Prepare the request payload
       const payload = {
         portfolio: formData.holdings.map(holding => ({
           symbol: holding.symbol,
           quantity: parseInt(holding.quantity.toString()),
           purchase_price: parseFloat(holding.purchasePrice.toString())
         })),
-        risk_tolerance: formData.riskTolerance,
         investment_goals: [formData.investmentGoals],
+        risk_tolerance: formData.riskTolerance,
         time_horizon: formData.timeHorizon
       };
 
-      console.log('Sending payload:', JSON.stringify(payload, null, 2));
-
-      // Make API call to backend
       const response = await fetch('https://portfolio-backend-959021211199.us-central1.run.app/analyze-portfolio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
-      console.log('Response status:', response.status);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('Success response:', result);
-      
-      // Navigate to dashboard with the API response data
       navigate('/dashboard', { state: { result } });
     } catch (error) {
       console.error('Error calling API:', error);
@@ -185,13 +304,9 @@ export default function InputPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">Stock Symbol</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., AAPL"
+                      <StockDropdown
                         value={holding.symbol}
-                        onChange={(e) => handleHoldingChange(index, 'symbol', e.target.value.toUpperCase())}
-                        className="w-full bg-white border border-neutral-300 rounded-lg p-3 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                        required
+                        onChange={(value) => handleHoldingChange(index, 'symbol', value)}
                       />
                     </div>
                     <div>

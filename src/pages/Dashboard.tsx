@@ -1,46 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Percent,
+import { useLocation, Link } from 'react-router-dom';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line, Bar, Doughnut, Pie } from 'react-chartjs-2';
+import {
   Brain,
+  TrendingUp,
   Shield,
-  Activity,
-  Target,
-  AlertTriangle,
-  CheckCircle,
-  Zap,
+  DollarSign,
+  Percent,
   BarChart3,
-  MessageCircle,
+  Activity,
+  CheckCircle,
+  AlertTriangle,
   Send,
+  RefreshCw,
+  MessageCircle,
   Clock,
   Globe,
+  PieChart as PieChartIcon,
   Newspaper,
-  RefreshCw,
+  Calendar,
   ExternalLink
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
   Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-  ScatterChart,
-  Scatter
-} from 'recharts';
+  Legend,
+  Filler
+);
 
 interface ChatMessage {
   id: string;
@@ -63,702 +71,500 @@ const Dashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // Only use real API data - no fallbacks
-  const performanceData = result?.visualization_data?.performance?.x?.map((date: string, i: number) => ({
-    date: new Date(date).toLocaleDateString(),
-    value: result.visualization_data.performance.y[i]
-  })) || [];
+  // Helper functions for risk and sentiment colors
+  const getRiskValue = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low': return 33;
+      case 'medium': return 66;
+      case 'high': return 100;
+      default: return 50;
+    }
+  };
 
-  const allocationData = result?.visualization_data?.composition?.labels?.map((label: string, i: number) => ({
-    name: label,
-    value: result.visualization_data.composition.values[i],
-    color: ["#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#d946ef", "#8b5cf6", "#06b6d4", "#84cc16"][i % 8]
-  })) || [];
+  const getRiskColor = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low': return '#10B981';
+      case 'medium': return '#F59E0B';
+      case 'high': return '#EF4444';
+      default: return '#6B7280';
+    }
+  };
 
-  const sectorData = result?.visualization_data?.composition?.labels?.map((label: string, i: number) => ({
-    sector: label,
-    allocation: result.visualization_data.composition.values[i],
-    performance: result.visualization_data.performance?.y?.[i] || 0
-  })) || [];
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment?.toLowerCase()) {
+      case 'positive': return '#10B981';
+      case 'negative': return '#EF4444';
+      case 'neutral': return '#6B7280';
+      default: return '#6B7280';
+    }
+  };
 
-  const riskMetrics = result?.visualization_data?.risk?.labels?.map((label: string, i: number) => ({
-    name: label,
-    score: result.visualization_data.risk.values[i] || 0,
-    status: result.visualization_data.risk.values[i] >= 7 ? 'good' : 
-            result.visualization_data.risk.values[i] >= 5 ? 'moderate' : 'poor'
-  })) || [];
+  const getImpactColor = (impactLevel: string) => {
+    switch (impactLevel?.toLowerCase()) {
+      case 'high': return '#EF4444';
+      case 'medium': return '#F59E0B';
+      case 'low': return '#10B981';
+      default: return '#6B7280';
+    }
+  };
 
-  const aiRecommendations = result?.recommendations?.map((rec: any) => ({
-    type: rec.type || 'General',
-    priority: rec.priority || 'medium',
-    title: rec.action || 'Portfolio Recommendation',
-    description: rec.details || 'Consider reviewing your portfolio allocation.',
-    confidence: 85
-  })) || [];
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return '#EF4444';
+      case 'medium': return '#F59E0B';
+      case 'low': return '#10B981';
+      default: return '#6B7280';
+    }
+  };
 
-  // Enhanced Market Sentiment Data
+  // Enhanced Performance Data - Use the actual performance data from backend
+  const performanceData = result?.visualization_data?.performance ? {
+    labels: result.visualization_data.performance.x.map((date: string) => 
+      new Date(date).toLocaleDateString()
+    ),
+    datasets: [{
+      label: 'Portfolio Value',
+      data: result.visualization_data.performance.y,
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: 'rgb(34, 197, 94)',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6
+    }]
+  } : null;
+
+  // Sector Allocation Data - Use the actual composition data from backend
+  const sectorData = result?.visualization_data?.composition ? {
+    labels: result.visualization_data.composition.labels,
+    datasets: [{
+      data: result.visualization_data.composition.values,
+      backgroundColor: [
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
+        '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'
+      ],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  } : null;
+
+  // Risk Gauge Data - Use the actual risk data from backend
+  const riskGaugeData = result?.visualization_data?.risk ? {
+    labels: result.visualization_data.risk.labels,
+    datasets: [{
+      data: result.visualization_data.risk.values,
+      backgroundColor: result.visualization_data.risk.values.map((val: number) => 
+        val > 0.2 ? '#EF4444' : val > 0.1 ? '#F59E0B' : '#10B981'
+      ),
+      borderWidth: 0
+    }]
+  } : null;
+
+  // Sentiment Gauge Data - Use the actual sentiment gauge from backend
+  const sentimentGaugeData = result?.visualization_data?.sentiment ? {
+    value: result.visualization_data.sentiment.value,
+    min: result.visualization_data.sentiment.min,
+    max: result.visualization_data.sentiment.max,
+    thresholds: result.visualization_data.sentiment.thresholds
+  } : null;
+
+  // Volatility Data - Use the actual volatility data from backend
+  const volatilityData = result?.risk_analysis?.volatility_data ? 
+    Object.entries(result.risk_analysis.volatility_data).map(([symbol, data]: [string, any]) => ({
+      symbol: data.symbol,
+      volatility: data.volatility,
+      annualizedVolatility: data.annualized_volatility,
+      dailyReturns: data.daily_returns,
+      daysAnalyzed: data.days_analyzed
+    })) : [];
+
+  // Sector Allocation Data - Use the actual sector data from backend
+  const sectorAllocationData = result?.risk_analysis?.sector_allocation ? {
+    labels: Object.keys(result.risk_analysis.sector_allocation),
+    datasets: [{
+      data: Object.values(result.risk_analysis.sector_allocation),
+      backgroundColor: [
+        '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
+        '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'
+      ],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  } : null;
+
+  // Enhanced Market Sentiment Data - Fixed to match backend structure
   const sentimentData = result?.market_sentiment ? {
     overall: result.market_sentiment.overall_sentiment,
     strength: result.market_sentiment.sentiment_strength,
-    subjectivity: result.market_sentiment.subjectivity,
-    recentEvents: result.market_sentiment.recent_events || [],
+    summary: result.market_sentiment.news_summary || 'Market sentiment analysis based on recent events and news sources.',
+    recentEvents: result.market_sentiment.recent_events?.portfolio_events || [],
     totalEvents: result.market_sentiment.recent_events?.total_events || 0,
-    highImpactCount: result.market_sentiment.recent_events?.high_impact_count || 0
+    highImpactCount: result.market_sentiment.recent_events?.high_impact_count || 0,
+    symbolBreakdown: result.market_sentiment.symbol_breakdown || {},
+    trendAnalysis: result.market_sentiment.trend_analysis || {}
   } : null;
 
-  // Portfolio Summary Data
+  // Portfolio Summary Data - Fixed to match backend structure
   const portfolioSummary = result?.portfolio_summary ? {
     totalPositions: result.portfolio_summary.number_of_positions,
     positions: result.portfolio_summary.positions || [],
-    totalValue: result.portfolio_summary.positions?.reduce((sum: number, pos: any) => sum + pos.position_value, 0) || 0
+    totalValue: result.performance_analysis?.current_value || 0,
+    totalCost: result.performance_analysis?.total_cost || 0,
+    totalReturn: result.performance_analysis?.total_return || 0,
+    returnPercentage: result.performance_analysis?.return_percentage || 0
   } : null;
 
-  // Volatility Data for Scatter Charts
-  const volatilityData = result?.risk_analysis?.volatility_data || {};
+  // AI Recommendations Data - Fixed to match backend structure (recommendations field)
+  const aiRecommendations = result?.recommendations || [];
 
-  // Portfolio metrics from API data only
+  // Portfolio metrics from API data only with 3 decimal places - Fixed to match backend structure
   const portfolioMetrics = result?.performance_analysis ? [
     {
       title: 'Total Portfolio Value',
       value: `$${result.performance_analysis.current_value?.toLocaleString() || '0'}`,
-      change: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toLocaleString() || '0'}`,
-      changePercent: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(2) || '0'}%`,
+      change: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toFixed(3) || '0'}`,
+      changePercent: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
       isPositive: result.performance_analysis.total_return >= 0,
       icon: DollarSign
     },
     {
       title: 'Total Return',
-      value: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toLocaleString() || '0'}`,
-      change: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(2) || '0'}%`,
-      changePercent: 'all time',
+      value: `${result.performance_analysis.total_return >= 0 ? '+' : ''}$${result.performance_analysis.total_return?.toFixed(3) || '0'}`,
+      change: `${result.performance_analysis.return_percentage >= 0 ? '+' : ''}${result.performance_analysis.return_percentage?.toFixed(3) || '0'}%`,
+      changePercent: 'All Time',
       isPositive: result.performance_analysis.total_return >= 0,
       icon: Percent
     },
     {
       title: 'Risk Level',
-      value: result.risk_analysis?.risk_level || 'Moderate',
+      value: result.risk_analysis?.risk_level?.charAt(0).toUpperCase() + result.risk_analysis?.risk_level?.slice(1) || 'Moderate',
       change: 'Risk Assessment',
-      changePercent: 'portfolio risk',
-      isPositive: false,
+      changePercent: 'Portfolio Risk',
+      isPositive: result.risk_analysis?.risk_level === 'low',
       icon: Shield
     },
     {
       title: 'Market Sentiment',
-      value: result.market_sentiment?.overall_sentiment || 'Neutral',
-      change: `${(result.market_sentiment?.sentiment_strength * 100)?.toFixed(1) || '0'}%`,
-      changePercent: 'sentiment strength',
+      value: result.market_sentiment?.overall_sentiment?.charAt(0).toUpperCase() + result.market_sentiment?.overall_sentiment?.slice(1) || 'Neutral',
+      change: `${(result.market_sentiment?.sentiment_strength * 100)?.toFixed(3) || '0'}%`,
+      changePercent: 'Sentiment Strength',
       isPositive: result.market_sentiment?.overall_sentiment === 'positive',
       icon: TrendingUp
     }
   ] : [];
 
-  // Check if we have any data to display
+  // Check if we have any data to display - make it more permissive
   const hasData = result && (
     portfolioMetrics.length > 0 || 
-    performanceData.length > 0 || 
-    allocationData.length > 0 || 
-    riskMetrics.length > 0 || 
-    aiRecommendations.length > 0
+    performanceData || 
+    sectorData || 
+    riskGaugeData ||
+    sentimentData ||
+    aiRecommendations.length > 0 ||
+    result.risk_analysis ||
+    result.performance_analysis ||
+    result.market_sentiment
   );
 
   // AI Chat Functions
-  const sendChatMessage = async () => {
-    if (!chatInput.trim() || !result) return;
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
 
-    const userMessage: ChatMessage = {
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    
+    // Add user message to chat
+    const userChatMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: chatInput,
+      content: userMessage,
       timestamp: new Date()
     };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    setChatInput('');
-    setIsChatLoading(true);
+    setChatMessages(prev => [...prev, userChatMessage]);
 
     try {
+      setIsChatLoading(true);
+      
       const response = await fetch('https://portfolio-backend-959021211199.us-central1.run.app/ai-insights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_question: chatInput,
-          portfolio_data: result,
+          user_question: userMessage,
+          portfolio_data: {
+            portfolio: portfolioSummary?.positions || [],
+            performance_analysis: result?.performance_analysis,
+            risk_analysis: result?.risk_analysis,
+            market_sentiment: result?.market_sentiment
+          },
           market_context: {
-            sentiment: result.market_sentiment?.overall_sentiment || 'neutral',
-            risk_level: result.risk_analysis?.risk_level || 'moderate'
+            overall_sentiment: result?.market_sentiment?.overall_sentiment,
+            recent_events: result?.market_sentiment?.recent_events
           }
-        })
+        }),
       });
 
-      if (response.ok) {
-        const aiResponse = await response.json();
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'ai',
-          content: aiResponse.nlp_insight,
-          timestamp: new Date(),
-          confidence: 0.85 // Default confidence for ai-insights
-        };
-        setChatMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error('Failed to get AI response');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      
+      // Add AI response to chat
+      const aiChatMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: data.nlp_insight || data.response || 'I apologize, but I couldn\'t generate a response at this time.',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, aiChatMessage]);
     } catch (error) {
-      console.error('AI Chat Error:', error);
-      const errorMessage: ChatMessage = {
+      console.error('Error sending message:', error);
+      const errorChatMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
         content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
       };
-      setChatMessages(prev => [...prev, errorMessage]);
+      setChatMessages(prev => [...prev, errorChatMessage]);
     } finally {
       setIsChatLoading(false);
     }
   };
 
-  // Real-time Update Functions
   const refreshPortfolioData = async () => {
-    if (!result?.portfolio_summary?.positions) return;
-    
     setIsRefreshing(true);
     try {
-      const updatedPositions = await Promise.all(
-        result.portfolio_summary.positions.map(async (position: any) => {
-          const response = await fetch(`https://portfolio-backend-959021211199.us-central1.run.app/market-data/${position.symbol}`);
-          if (response.ok) {
-            const data = await response.json();
-            return { ...position, current_price: data.current_price };
-          }
-          return position;
-        })
-      );
-      
-      // Update the result with new data
-      const updatedResult = {
-        ...result,
-        portfolio_summary: {
-          ...result.portfolio_summary,
-          positions: updatedPositions
-        }
-      };
-      
-      // Force re-render (in a real app, you'd use state management)
-      window.location.reload();
+      // Simulate refresh - in real app, you'd fetch new data
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLastUpdate(new Date());
     } catch (error) {
-      console.error('Refresh Error:', error);
+      console.error('Error refreshing data:', error);
     } finally {
       setIsRefreshing(false);
-      setLastUpdate(new Date());
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-50 text-red-700 border-red-200';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'low': return 'bg-green-50 text-green-700 border-green-200';
-      default: return 'bg-neutral-50 text-neutral-700 border-neutral-200';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'good': return 'text-green-600';
-      case 'moderate': return 'text-yellow-600';
-      case 'poor': return 'text-red-600';
-      default: return 'text-neutral-600';
-    }
-  };
-
-  const getImpactColor = (impact: string) => {
-    switch (impact) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
     }
   };
 
   // Show empty state if no data
   if (!hasData) {
     return (
-      <div className="min-h-screen pt-8 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-20">
-            <div className="mb-6">
-              <Brain className="w-16 h-16 text-neutral-400 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">No Portfolio Data Available</h2>
-            <p className="text-neutral-600 mb-8">
-              Please submit your portfolio information to get AI-powered analysis and insights.
-            </p>
-            <Link
-              to="/"
-              className="bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
-            >
-              Analyze Your Portfolio
-            </Link>
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-neutral-600" />
           </div>
+          <h2 className="text-xl font-semibold text-neutral-900 mb-2">No Portfolio Data</h2>
+          <p className="text-neutral-600 mb-4">Please submit your portfolio data to view the dashboard.</p>
+          <Link
+            to="/"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            Go to Input Page
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-8 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with Real-time Update */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-neutral-900">AI Portfolio Analysis</h1>
-                <p className="text-neutral-600">Multi-agent intelligence powered by Google ADK</p>
-              </div>
+    <div className="min-h-screen bg-neutral-50">
+      {/* Header */}
+      <div className="bg-white border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Brain className="w-8 h-8 text-purple-600" />
+              <h1 className="text-xl font-bold text-neutral-900">AI Portfolio Manager</h1>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm text-neutral-600">Last Updated</p>
-                <p className="text-sm font-medium text-neutral-900">
-                  {lastUpdate.toLocaleTimeString()}
-                </p>
-              </div>
+            <div className="flex items-center space-x-4">
               <button
                 onClick={refreshPortfolioData}
                 disabled={isRefreshing}
-                className="p-2 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-50 disabled:opacity-50 transition-colors"
-                title="Refresh Data"
+                className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-5 h-5 text-neutral-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
               </button>
+              <div className="text-sm text-neutral-600">
+                Last updated: {lastUpdate.toLocaleTimeString()}
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Portfolio Overview Metrics */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Portfolio Metrics */}
         {portfolioMetrics.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            transition={{ duration: 0.6 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           >
-            {portfolioMetrics.map((metric, index) => {
-              const Icon = metric.icon;
-              return (
-                <div key={index} className="bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-2 rounded-lg ${metric.isPositive ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                      <Icon className={`w-5 h-5 ${metric.isPositive ? 'text-green-600' : 'text-yellow-600'}`} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-neutral-600">{metric.title}</p>
-                    <p className="text-2xl font-bold text-neutral-900">{metric.value}</p>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-sm font-medium ${metric.isPositive ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {metric.change}
-                      </span>
-                      <span className="text-xs text-neutral-500">{metric.changePercent}</span>
-                    </div>
-                  </div>
+            {portfolioMetrics.map((metric, index) => (
+              <div key={index} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <metric.icon className="w-6 h-6 text-neutral-600" />
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    metric.isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {metric.changePercent}
+                  </span>
                 </div>
-              );
-            })}
+                <h3 className="text-sm font-medium text-neutral-600 mb-2">{metric.title}</h3>
+                <p className="text-2xl font-bold text-neutral-900 mb-1">{metric.value}</p>
+                <p className={`text-sm font-medium ${metric.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {metric.change}
+                </p>
+              </div>
+            ))}
           </motion.div>
         )}
 
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Charts */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Portfolio Performance Chart */}
-            {performanceData.length > 0 && (
+        {/* Main Dashboard Grid - Full Width Layout */}
+        <div className="space-y-8">
+          {/* Top Row - Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Portfolio Performance */}
+            {(performanceData || result?.performance_analysis) && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-neutral-900 flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-primary-600" />
-                    <span>Portfolio Performance</span>
-                  </h3>
-                  <div className="flex items-center space-x-2 text-sm text-neutral-600">
-                    <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
-                    <span>Portfolio Value</span>
-                  </div>
-                </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <span>Portfolio Performance (30-Day Trend)</span>
+                </h3>
                 <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={performanceData}>
-                      <defs>
-                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                      <XAxis dataKey="date" stroke="#737373" />
-                      <YAxis stroke="#737373" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: '1px solid #e5e5e5',
-                          borderRadius: '8px',
-                          color: '#171717'
-                        }} 
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#0ea5e9"
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorValue)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  {performanceData ? (
+                    <Line 
+                      data={performanceData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            display: false
+                          },
+                          tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                              label: (context: any) => `Portfolio Value: $${context.parsed.y.toLocaleString()}`
+                            }
+                          }
+                        },
+                        scales: {
+                          x: {
+                            title: {
+                              display: true,
+                              text: 'Date',
+                              color: '#6B7280',
+                              font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                              color: '#F3F4F6'
+                            },
+                            ticks: {
+                              color: '#6B7280',
+                              maxRotation: 45
+                            }
+                          },
+                          y: {
+                            title: {
+                              display: true,
+                              text: 'Portfolio Value ($)',
+                              color: '#6B7280',
+                              font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                              color: '#F3F4F6'
+                            },
+                            ticks: {
+                              color: '#6B7280',
+                              callback: (value: any) => `$${value.toLocaleString()}`
+                            }
+                          }
+                        },
+                        interaction: {
+                          mode: 'nearest',
+                          axis: 'x',
+                          intersect: false
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-neutral-500">
+                      <p>Performance trend data not available</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Asset Allocation */}
-              {allocationData.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                  className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
-                >
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                    <BarChart3 className="w-5 h-5 text-secondary-600" />
-                    <span>Asset Allocation</span>
-                  </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={allocationData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {allocationData.map((entry: { name: string; value: number; color: string }, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #e5e5e5',
-                            borderRadius: '8px',
-                            color: '#171717'
-                          }} 
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    {allocationData.map((item: { name: string; value: number; color: string }, index: number) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-sm text-neutral-600">{item.name}</span>
-                        <span className="text-sm text-neutral-900 font-medium">{item.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Sector Performance */}
-              {sectorData.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                  className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
-                >
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                    <Activity className="w-5 h-5 text-accent-600" />
-                    <span>Sector Performance</span>
-                  </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={sectorData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                        <XAxis dataKey="sector" stroke="#737373" />
-                        <YAxis stroke="#737373" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #e5e5e5',
-                            borderRadius: '8px',
-                            color: '#171717'
-                          }} 
-                        />
-                        <Bar dataKey="performance" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-
-            {/* News Timeline */}
-            {sentimentData?.recentEvents && sentimentData.recentEvents.length > 0 && (
+            {/* Sector Performance */}
+            {(sectorData || result?.risk_analysis?.sector_allocation) && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
                 className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-neutral-900 flex items-center space-x-2">
-                    <Newspaper className="w-5 h-5 text-blue-600" />
-                    <span>Recent Market Events</span>
-                  </h3>
-                  <div className="flex items-center space-x-2 text-sm text-neutral-600">
-                    <span>{sentimentData.totalEvents} total events</span>
-                    <span>•</span>
-                    <span className="text-red-600">{sentimentData.highImpactCount} high impact</span>
-                  </div>
-                </div>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {sentimentData.recentEvents.slice(0, 10).map((event: any, index: number) => (
-                    <div key={index} className="flex items-start space-x-4 p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors">
-                      <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${getImpactColor(event.impact_level)}`}></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <h4 className="text-sm font-semibold text-neutral-900 mb-1">{event.title}</h4>
-                          <div className="flex items-center space-x-2 ml-2">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              event.impact_level === 'high' ? 'bg-red-100 text-red-700' :
-                              event.impact_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-green-100 text-green-700'
-                            }`}>
-                              {event.impact_level}
-                            </span>
-                            {event.url && (
-                              <a 
-                                href={event.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-700"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-neutral-600 mb-2">{event.description}</p>
-                        <div className="flex items-center justify-between text-xs text-neutral-500">
-                          <span>{event.source}</span>
-                          <span>{new Date(event.date).toLocaleDateString()}</span>
-                        </div>
-                      </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <PieChartIcon className="w-5 h-5 text-blue-600" />
+                  <span>Portfolio Composition</span>
+                </h3>
+                <div className="h-80">
+                  {sectorData ? (
+                    <Pie 
+                      data={sectorData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'bottom',
+                            labels: {
+                              color: '#6B7280',
+                              padding: 20,
+                              usePointStyle: true
+                            }
+                          },
+                          tooltip: {
+                            callbacks: {
+                              label: (context: any) => {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const percentage = ((value / context.dataset.data.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(1);
+                                return `${label}: $${value.toLocaleString()} (${percentage}%)`;
+                              }
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-neutral-500">
+                      <p>Portfolio composition data not available</p>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* News Summary Card */}
-            {sentimentData && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-neutral-900 flex items-center space-x-2">
-                    <Globe className="w-5 h-5 text-green-600" />
-                    <span>Market News Summary</span>
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-neutral-500" />
-                    <span className="text-sm text-neutral-600">Real-time</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  {/* Overall Market Sentiment */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-lg font-semibold text-neutral-900">Market Sentiment</h4>
-                      <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                        sentimentData.overall === 'positive' ? 'bg-green-100 text-green-700' :
-                        sentimentData.overall === 'negative' ? 'bg-red-100 text-red-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {sentimentData.overall.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-neutral-600">Sentiment Strength</p>
-                        <p className="text-xl font-bold text-neutral-900">
-                          {(sentimentData.strength * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-neutral-600">Subjectivity</p>
-                        <p className="text-xl font-bold text-neutral-900">
-                          {(sentimentData.subjectivity * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* News Statistics */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">Total Events</p>
-                      <p className="text-xl font-bold text-blue-600">{sentimentData.totalEvents}</p>
-                    </div>
-                    <div className="text-center p-3 bg-red-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">High Impact</p>
-                      <p className="text-xl font-bold text-red-600">{sentimentData.highImpactCount}</p>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">Market Health</p>
-                      <p className="text-xl font-bold text-green-600">
-                        {sentimentData.overall === 'positive' ? 'Good' : 
-                         sentimentData.overall === 'negative' ? 'Poor' : 'Neutral'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Key Market Insights */}
-                  <div className="bg-neutral-50 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-neutral-900 mb-3">Key Market Insights</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          sentimentData.overall === 'positive' ? 'bg-green-500' :
-                          sentimentData.overall === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}></div>
-                        <span className="text-sm text-neutral-700">
-                          Market sentiment is currently <strong>{sentimentData.overall}</strong> with 
-                          <strong> {(sentimentData.strength * 100).toFixed(1)}%</strong> strength
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span className="text-sm text-neutral-700">
-                          <strong>{sentimentData.highImpactCount}</strong> high-impact events detected in recent market activity
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                        <span className="text-sm text-neutral-700">
-                          Sentiment analysis based on <strong>{sentimentData.totalEvents}</strong> market events and news sources
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </motion.div>
             )}
           </div>
 
-          {/* Right Column - AI Insights & Chat */}
-          <div className="space-y-8">
-            {/* AI Chat Interface */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
-            >
-              <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5 text-purple-600" />
-                <span>AI Portfolio Assistant</span>
-              </h3>
-              
-              {/* Chat Messages */}
-              <div className="h-64 overflow-y-auto mb-4 space-y-3">
-                {chatMessages.length === 0 ? (
-                  <div className="text-center py-8 text-neutral-500">
-                    <MessageCircle className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">Ask me anything about your portfolio!</p>
-                  </div>
-                ) : (
-                  chatMessages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                          message.type === 'user'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-neutral-100 text-neutral-900'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
-                        {message.confidence && (
-                          <p className="text-xs opacity-75 mt-1">
-                            Confidence: {Math.round(message.confidence * 100)}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {isChatLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-neutral-100 text-neutral-900 px-3 py-2 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-600"></div>
-                        <span className="text-sm">AI is thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Chat Input */}
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
-                  placeholder="Ask about your portfolio..."
-                  className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  disabled={isChatLoading}
-                />
-                <button
-                  onClick={sendChatMessage}
-                  disabled={!chatInput.trim() || isChatLoading}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-
+          {/* Second Row - Risk and Sentiment */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Risk Analysis */}
-            {riskMetrics.length > 0 && (
+            {(riskGaugeData || result?.risk_analysis) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -767,41 +573,186 @@ const Dashboard = () => {
               >
                 <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
                   <Shield className="w-5 h-5 text-blue-600" />
-                  <span>Risk Analysis</span>
+                  <span>Risk Metrics</span>
                 </h3>
-                <div className="space-y-4">
-                  {riskMetrics.map((metric: { name: string; score: number; status: string }, index: number) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-neutral-700">{metric.name}</span>
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-sm font-semibold ${getStatusColor(metric.status)}`}>
-                            {metric.score}/10
-                          </span>
-                          {metric.status === 'good' ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                          )}
-                        </div>
+                <div className="space-y-6">
+                  {/* Risk Level Gauge */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-neutral-700">Risk Level</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm font-semibold`} style={{ color: getRiskColor(result.risk_analysis.risk_level) }}>
+                        {result.risk_analysis.risk_level.toUpperCase()}
+                      </span>
+                      {result.risk_analysis.risk_level.toLowerCase() === 'low' ? (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="w-full bg-neutral-200 rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${getRiskValue(result.risk_analysis.risk_level)}%`,
+                        backgroundColor: getRiskColor(result.risk_analysis.risk_level)
+                      }}
+                    ></div>
+                  </div>
+
+                  {/* Portfolio Volatility */}
+                  {result.risk_analysis.portfolio_volatility && (
+                    <div className="p-4 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-neutral-700">Portfolio Volatility</span>
+                        <span className="text-sm font-semibold text-neutral-900">
+                          {(result.risk_analysis.portfolio_volatility * 100).toFixed(3)}%
+                        </span>
                       </div>
                       <div className="w-full bg-neutral-200 rounded-full h-2">
                         <div 
-                          className={`h-2 rounded-full transition-all duration-500 ${
-                            metric.score >= 7 ? 'bg-green-500' : 
-                            metric.score >= 5 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${metric.score * 10}%` }}
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(result.risk_analysis.portfolio_volatility * 1000, 100)}%`,
+                            backgroundColor: result.risk_analysis.portfolio_volatility > 0.2 ? '#EF4444' : 
+                                           result.risk_analysis.portfolio_volatility > 0.1 ? '#F59E0B' : '#10B981'
+                          }}
                         ></div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Concentration Risk */}
+                  {result.risk_analysis.concentration_metrics && (
+                    <div className="p-4 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-neutral-700">Concentration Risk (HHI)</span>
+                        <span className="text-sm font-semibold text-neutral-900">
+                          {result.risk_analysis.concentration_metrics.hhi.toFixed(3)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(result.risk_analysis.concentration_metrics.hhi * 100, 100)}%`,
+                            backgroundColor: result.risk_analysis.concentration_metrics.hhi > 0.5 ? '#EF4444' : 
+                                           result.risk_analysis.concentration_metrics.hhi > 0.25 ? '#F59E0B' : '#10B981'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top 3 Concentration */}
+                  {result.risk_analysis.concentration_metrics && (
+                    <div className="p-4 bg-neutral-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-neutral-700">Top 3 Concentration</span>
+                        <span className="text-sm font-semibold text-neutral-900">
+                          {(result.risk_analysis.concentration_metrics.top_3_concentration * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${result.risk_analysis.concentration_metrics.top_3_concentration * 100}%`,
+                            backgroundColor: result.risk_analysis.concentration_metrics.top_3_concentration > 0.7 ? '#EF4444' : 
+                                           result.risk_analysis.concentration_metrics.top_3_concentration > 0.4 ? '#F59E0B' : '#10B981'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
 
-            {/* AI Recommendations */}
-            {aiRecommendations.length > 0 && (
+            {/* Market Sentiment */}
+            {(sentimentData || result?.market_sentiment) && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <span>Market Sentiment</span>
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-neutral-600">Overall Sentiment</p>
+                      <p className={`text-lg font-semibold ${
+                        sentimentData?.overall === 'Positive' ? 'text-green-600' : 
+                        sentimentData?.overall === 'Negative' ? 'text-red-600' : 'text-neutral-600'
+                      }`}>
+                        {sentimentData?.overall?.charAt(0).toUpperCase() + sentimentData?.overall?.slice(1) || 'Neutral'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-neutral-600">Strength</p>
+                      <p className="text-lg font-bold text-neutral-900">
+                        {(sentimentData?.strength * 100)?.toFixed(3) || '0'}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Sentiment Distribution */}
+                  {result?.market_sentiment?.sentiment_distribution && (
+                    <div className="p-4 bg-neutral-50 rounded-lg">
+                      <h4 className="text-sm font-medium text-neutral-700 mb-3">Sentiment Distribution</h4>
+                      <div className="space-y-2">
+                        {Object.entries(result.market_sentiment.sentiment_distribution).map(([sentiment, count]: [string, any]) => (
+                          <div key={sentiment} className="flex items-center justify-between">
+                            <span className="text-sm text-neutral-600 capitalize">{sentiment}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-20 bg-neutral-200 rounded-full h-2">
+                                <div 
+                                  className="h-2 rounded-full"
+                                  style={{ 
+                                    width: `${(count / (Object.values(result.market_sentiment.sentiment_distribution) as number[]).reduce((a: number, b: number) => a + b, 0)) * 100}%`,
+                                    backgroundColor: sentiment === 'positive' ? '#10B981' : 
+                                                   sentiment === 'negative' ? '#EF4444' : '#6B7280'
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-neutral-900">{count}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Trend Analysis */}
+                  {result?.market_sentiment?.trend_analysis && (
+                    <div className="p-4 bg-neutral-50 rounded-lg">
+                      <h4 className="text-sm font-medium text-neutral-700 mb-3">Trend Analysis</h4>
+                      <div className="space-y-2">
+                        {Object.entries(result.market_sentiment.trend_analysis.trends).map(([trend, symbols]: [string, any]) => (
+                          <div key={trend} className="flex items-center justify-between">
+                            <span className="text-sm text-neutral-600 capitalize">{trend}</span>
+                            <span className="text-sm font-medium text-neutral-900">
+                              {Array.isArray(symbols) ? symbols.join(', ') : symbols}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Third Row - News and Events */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Market News Summary */}
+            {(sentimentData || result?.market_sentiment) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -809,31 +760,295 @@ const Dashboard = () => {
                 className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
               >
                 <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                  <Brain className="w-5 h-5 text-purple-600" />
-                  <span>AI Recommendations</span>
+                  <Newspaper className="w-5 h-5 text-indigo-600" />
+                  <span>Market News Summary</span>
                 </h3>
                 <div className="space-y-4">
-                  {aiRecommendations.map((rec: { type: string; priority: string; title: string; description: string; confidence: number }, index: number) => (
-                    <div key={index} className="border border-neutral-200 rounded-lg p-4 hover:bg-neutral-50 transition-colors">
-                      <div className="flex items-start justify-between mb-3">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(rec.priority)}`}>
-                          {rec.priority.toUpperCase()}
-                        </span>
-                        <div className="text-right">
-                          <div className="text-xs text-neutral-500">Confidence</div>
-                          <div className="text-sm font-medium text-neutral-900">{rec.confidence}%</div>
-                        </div>
-                      </div>
-                      <h4 className="text-sm font-semibold text-neutral-900 mb-2">{rec.title}</h4>
-                      <p className="text-sm text-neutral-600">{rec.description}</p>
+                  <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+                    <h4 className="text-sm font-semibold text-indigo-900 mb-2">AI Market Analysis</h4>
+                    <p className="text-sm text-indigo-800 leading-relaxed">
+                      {sentimentData?.summary || 'Market sentiment analysis based on recent events and news sources.'}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <p className="text-sm text-neutral-600">Market Health</p>
+                      <p className={`text-lg font-bold ${
+                        sentimentData?.overall === 'Positive' ? 'text-green-600' : 
+                        sentimentData?.overall === 'Negative' ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {sentimentData?.overall === 'Positive' ? 'Good' : 
+                         sentimentData?.overall === 'Negative' ? 'Poor' : 'Fair'}
+                      </p>
                     </div>
-                  ))}
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-neutral-600">Sentiment Strength</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        {(sentimentData?.strength * 100)?.toFixed(3) || '0'}%
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Symbol Breakdown */}
+                  {result?.market_sentiment?.symbol_breakdown && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-neutral-700">Symbol Sentiment</h4>
+                      {Object.entries(result.market_sentiment.symbol_breakdown).map(([symbol, data]: [string, any]) => (
+                        <div key={symbol} className="p-3 bg-neutral-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-neutral-900">{symbol}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              data.sentiment.category === 'positive' ? 'bg-green-100 text-green-700' :
+                              data.sentiment.category === 'negative' ? 'bg-red-100 text-red-700' :
+                              'bg-neutral-100 text-neutral-700'
+                            }`}>
+                              {data.sentiment.category.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-neutral-600">
+                            <span>Polarity: {(data.sentiment.polarity * 100).toFixed(1)}%</span>
+                            <span>Articles: {data.sentiment.article_count}</span>
+                            <span>Trend: {data.trend.charAt(0).toUpperCase() + data.trend.slice(1)}</span>
+                          </div>
+                          
+                          {/* Individual Headlines */}
+                          {data.headlines && data.headlines.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <h5 className="text-xs font-medium text-neutral-700">Recent Headlines</h5>
+                              {data.headlines.slice(0, 3).map((headline: any, index: number) => (
+                                <div key={index} className="border-l-2 border-neutral-200 pl-3">
+                                  <h6 className="text-xs font-medium text-neutral-800 line-clamp-2">
+                                    {headline.headline}
+                                  </h6>
+                                  <div className="flex items-center justify-between text-xs text-neutral-600 mt-1">
+                                    <span>{headline.source}</span>
+                                    <span>{new Date(headline.published_at).toLocaleDateString()}</span>
+                                  </div>
+                                  {headline.sentiment && (
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <span className={`text-xs px-1 py-0.5 rounded ${
+                                        headline.sentiment.category === 'positive' ? 'bg-green-100 text-green-700' :
+                                        headline.sentiment.category === 'negative' ? 'bg-red-100 text-red-700' :
+                                        'bg-neutral-100 text-neutral-700'
+                                      }`}>
+                                        {headline.sentiment.category.toUpperCase()}
+                                      </span>
+                                      <span className="text-xs text-neutral-500">
+                                        ({(headline.sentiment.polarity * 100).toFixed(1)}%)
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
 
-            {/* Market Sentiment Analysis */}
-            {sentimentData && (
+            {/* Recent Events */}
+            {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events) && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <span>Recent Market Events & News</span>
+                </h3>
+                
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-neutral-600">Total Events</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {sentimentData?.totalEvents || result?.market_sentiment?.recent_events?.total_events || 0}
+                    </p>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 rounded-lg">
+                    <p className="text-sm text-neutral-600">High Impact</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {sentimentData?.highImpactCount || result?.market_sentiment?.recent_events?.high_impact_count || 0}
+                    </p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <p className="text-sm text-neutral-600">Stocks Covered</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events?.portfolio_events || []).length}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Events by Stock */}
+                <div className="space-y-6 max-h-[600px] overflow-y-auto">
+                  {(sentimentData?.recentEvents || result?.market_sentiment?.recent_events?.portfolio_events || []).map((portfolioEvent: any, index: number) => (
+                    <div key={index} className="border border-neutral-200 rounded-xl p-5 hover:bg-neutral-50 transition-colors">
+                      {/* Stock Header */}
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-200">
+                        <div>
+                          <h4 className="text-lg font-semibold text-neutral-900">
+                            {portfolioEvent.symbol}
+                          </h4>
+                          <p className="text-sm text-neutral-600">
+                            {portfolioEvent.total_events} Events • {portfolioEvent.high_impact_events} High Impact
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                            portfolioEvent.high_impact_events > 2 ? 'bg-red-100 text-red-700' :
+                            portfolioEvent.high_impact_events > 1 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {portfolioEvent.high_impact_events} High Impact
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Event Summary */}
+                      <div className="mb-4 p-3 bg-neutral-50 rounded-lg">
+                        <p className="text-sm text-neutral-700 font-medium">
+                          📊 {portfolioEvent.event_summary}
+                        </p>
+                      </div>
+                      
+                      {/* Individual Events */}
+                      <div className="space-y-3">
+                        {portfolioEvent.recent_events && portfolioEvent.recent_events.slice(0, 5).map((event: any, eventIndex: number) => (
+                          <div key={eventIndex} className="border border-neutral-200 rounded-lg p-4 hover:bg-white transition-colors">
+                            <div className="flex items-start justify-between mb-2">
+                              <h5 className="text-sm font-semibold text-neutral-800 line-clamp-2 flex-1 mr-3">
+                                {event.headline}
+                              </h5>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
+                                event.impact_level === 'high' ? 'bg-red-100 text-red-700' :
+                                event.impact_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>
+                                {event.impact_level?.toUpperCase() || 'LOW'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-xs text-neutral-600 mb-2">
+                              <span>🕒 {event.days_old} Days Ago</span>
+                              <span>📰 {event.source}</span>
+                            </div>
+                            
+                            {event.sentiment && (
+                              <div className="flex items-center space-x-3 p-2 bg-neutral-50 rounded mb-2">
+                                <span className="text-xs text-neutral-500">Sentiment:</span>
+                                <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                  event.sentiment.category === 'positive' ? 'bg-green-100 text-green-700' :
+                                  event.sentiment.category === 'negative' ? 'bg-red-100 text-red-700' : 
+                                  'bg-neutral-100 text-neutral-700'
+                                }`}>
+                                  {event.sentiment.category?.toUpperCase()}
+                                </span>
+                                <span className="text-xs text-neutral-500">
+                                  ({(event.sentiment.polarity * 100).toFixed(1)}% confidence)
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* URL Link if available */}
+                            {event.url && (
+                              <div className="mt-2">
+                                <a 
+                                  href={event.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  <span>Read Full Article</span>
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Show More Button if there are more events */}
+                      {portfolioEvent.recent_events && portfolioEvent.recent_events.length > 5 && (
+                        <div className="mt-3 text-center">
+                          <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            View {portfolioEvent.recent_events.length - 5} More Events →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Footer Note */}
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-xs text-blue-700 text-center">
+                    💡 Events are ranked by impact level and recency. High impact events may significantly affect stock performance.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* New Row - Diversification Score and Individual Stock Volatility */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Diversification Score */}
+            {result?.risk_analysis?.diversification_score && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <PieChartIcon className="w-5 h-5 text-green-600" />
+                  <span>Portfolio Diversification</span>
+                </h3>
+                <div className="space-y-4">
+                  <div className="text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
+                    <p className="text-sm text-neutral-600 mb-2">Diversification Score</p>
+                    <p className="text-4xl font-bold text-green-600 mb-2">
+                      {result.risk_analysis.diversification_score.score}/100
+                    </p>
+                    <div className="w-full bg-neutral-200 rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${result.risk_analysis.diversification_score.score}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-neutral-600 mt-2">
+                      {result.risk_analysis.diversification_score.assessment}
+                    </p>
+                  </div>
+                  
+                  {result.risk_analysis.diversification_score.factors && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-neutral-900">Key Factors:</h4>
+                      {result.risk_analysis.diversification_score.factors.map((factor: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                          <span className="text-sm text-neutral-700">{factor.name}</span>
+                          <span className={`text-sm font-medium ${
+                            factor.impact === 'positive' ? 'text-green-600' : 
+                            factor.impact === 'negative' ? 'text-red-600' : 'text-neutral-600'
+                          }`}>
+                            {factor.impact?.toUpperCase()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Individual Stock Volatility Summary */}
+            {volatilityData.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -841,45 +1056,94 @@ const Dashboard = () => {
                 className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
               >
                 <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                  <Activity className="w-5 h-5 text-green-600" />
-                  <span>Market Sentiment</span>
+                  <BarChart3 className="w-5 h-5 text-red-600" />
+                  <span>Stock Volatility Summary</span>
                 </h3>
-                
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-neutral-600">Overall Sentiment</p>
-                      <p className={`text-lg font-semibold capitalize ${
-                        sentimentData.overall === 'positive' ? 'text-green-600' : 
-                        sentimentData.overall === 'negative' ? 'text-red-600' : 'text-yellow-600'
-                      }`}>
-                        {sentimentData.overall}
-                      </p>
+                  {volatilityData.map((stock, index) => (
+                    <div key={index} className="border border-neutral-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-semibold text-neutral-900">{stock.symbol}</h4>
+                        <span className="text-xs text-neutral-500">{stock.daysAnalyzed} Days</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-neutral-50 rounded-lg">
+                          <p className="text-xs text-neutral-600">Daily Volatility</p>
+                          <p className="text-lg font-bold text-neutral-900">
+                            {(stock.volatility * 100).toFixed(2)}%
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-neutral-50 rounded-lg">
+                          <p className="text-xs text-neutral-600">Annualized</p>
+                          <p className="text-lg font-bold text-neutral-900">
+                            {(stock.annualizedVolatility * 100).toFixed(2)}%
+                          </p>
+                        </div>
+                      </div>
+                      {stock.dailyReturns && stock.dailyReturns.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs text-neutral-600 mb-2">Recent Performance</p>
+                          <div className="flex space-x-1">
+                            {stock.dailyReturns.slice(-7).map((return_: number, i: number) => (
+                              <div
+                                key={i}
+                                className={`flex-1 h-6 rounded text-xs flex items-center justify-center font-medium ${
+                                  return_ >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}
+                                title={`${(return_ * 100).toFixed(1)}%`}
+                              >
+                                {(return_ * 100).toFixed(1)}%
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-neutral-600">Strength</p>
-                      <p className="text-lg font-semibold text-neutral-900">
-                        {(sentimentData.strength * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">Total Events</p>
-                      <p className="text-xl font-bold text-blue-600">{sentimentData.totalEvents}</p>
+          {/* Fourth Row - AI Recommendations and Forecasting */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* AI Recommendations */}
+            {(aiRecommendations.length > 0 || result?.recommendations) && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <Brain className="w-5 h-5 text-purple-600" />
+                  <span>AI Recommendations</span>
+                </h3>
+                <div className="space-y-4">
+                  {(aiRecommendations.length > 0 ? aiRecommendations : result?.recommendations || []).map((rec: any, index: number) => (
+                    <div key={index} className="border border-neutral-200 rounded-lg p-4 hover:bg-neutral-50 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full`} 
+                              style={{ 
+                                backgroundColor: getPriorityColor(rec.priority) + '20',
+                                color: getPriorityColor(rec.priority)
+                              }}>
+                          {rec.priority.toUpperCase()}
+                        </span>
+                        <span className="text-xs text-neutral-500 capitalize">
+                          {rec.type?.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-semibold text-neutral-900 mb-2">{rec.action || rec.title}</h4>
+                      <p className="text-sm text-neutral-600">{rec.details || rec.description}</p>
                     </div>
-                    <div className="text-center p-3 bg-red-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">High Impact</p>
-                      <p className="text-xl font-bold text-red-600">{sentimentData.highImpactCount}</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </motion.div>
             )}
 
-            {/* Portfolio Summary */}
-            {portfolioSummary && (
+            {/* Portfolio Forecasting */}
+            {result?.visualization_data?.forecasting && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -887,47 +1151,222 @@ const Dashboard = () => {
                 className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
               >
                 <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
-                  <span>Portfolio Summary</span>
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                  <span>Portfolio Growth Projections</span>
                 </h3>
-                
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">Positions</p>
-                      <p className="text-xl font-bold text-blue-600">{portfolioSummary.totalPositions}</p>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-neutral-600">Total Value</p>
-                      <p className="text-xl font-bold text-green-600">
-                        ${portfolioSummary.totalValue.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-semibold text-neutral-900">Current Positions</h4>
-                    {portfolioSummary.positions.map((position: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
-                        <div>
-                          <p className="text-sm font-medium text-neutral-900">{position.symbol}</p>
-                          <p className="text-xs text-neutral-600">{position.quantity} shares</p>
+                  <div className="grid grid-cols-1 gap-4">
+                    {Object.entries(result.visualization_data.forecasting.scenarios).map(([scenario, data]: [string, any]) => (
+                      <div key={scenario} className="border border-neutral-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-neutral-900 capitalize">
+                            {scenario} Scenario
+                          </h4>
+                          <span className="text-xs text-neutral-600">
+                            {data.annual_return}% annual return
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-neutral-900">
-                            ${position.position_value.toLocaleString()}
-                          </p>
-                          <p className={`text-xs ${position.return_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {position.return_percentage >= 0 ? '+' : ''}{position.return_percentage.toFixed(2)}%
-                          </p>
+                        <div className="space-y-2">
+                          {data.projections.slice(0, 3).map((projection: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between text-xs">
+                              <span className="text-neutral-600">Year {projection.year}:</span>
+                              <div className="text-right">
+                                <div className="font-medium text-neutral-900">
+                                  ${projection.value.toLocaleString()}
+                                </div>
+                                <div className={`text-xs ${
+                                  projection.growth >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {projection.growth >= 0 ? '+' : ''}{projection.growth.toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Current Value:</strong> ${result.visualization_data.forecasting.current_value.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Projections based on historical performance and market conditions
+                    </p>
                   </div>
                 </div>
               </motion.div>
             )}
           </div>
+
+          {/* Fifth Row - Volatility and Sector Allocation */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Volatility Analysis */}
+            {volatilityData.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <BarChart3 className="w-5 h-5 text-red-600" />
+                  <span>Stock Volatility Analysis</span>
+                </h3>
+                <div className="space-y-4">
+                  {volatilityData.map((stock, index) => (
+                    <div key={index} className="border border-neutral-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-neutral-900">{stock.symbol}</h4>
+                        <span className="text-xs text-neutral-500">{stock.daysAnalyzed} Days Analyzed</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-neutral-50 rounded-lg">
+                          <p className="text-xs text-neutral-600">Daily Volatility</p>
+                          <p className="text-lg font-bold text-neutral-900">
+                            {(stock.volatility * 100).toFixed(3)}%
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-neutral-50 rounded-lg">
+                          <p className="text-xs text-neutral-600">Annualized Volatility</p>
+                          <p className="text-lg font-bold text-neutral-900">
+                            {(stock.annualizedVolatility * 100).toFixed(3)}%
+                          </p>
+                        </div>
+                      </div>
+                      {stock.dailyReturns && stock.dailyReturns.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs text-neutral-600 mb-2">Recent Daily Returns</p>
+                          <div className="flex space-x-1">
+                            {stock.dailyReturns.slice(-5).map((return_: number, i: number) => (
+                              <div
+                                key={i}
+                                className={`flex-1 h-8 rounded text-xs flex items-center justify-center font-medium ${
+                                  return_ >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {(return_ * 100).toFixed(1)}%
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Sector Allocation */}
+            {sectorAllocationData && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.9 }}
+                className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+              >
+                <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+                  <PieChartIcon className="w-5 h-5 text-blue-600" />
+                  <span>Sector Allocation</span>
+                </h3>
+                <div className="h-80">
+                  <Pie 
+                    data={sectorAllocationData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            color: '#6B7280',
+                            padding: 20,
+                            usePointStyle: true
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (context: any) => {
+                              const label = context.label || '';
+                              const value = context.parsed;
+                              const percentage = ((value / context.dataset.data.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(1);
+                              return `${label}: ${(value * 100).toFixed(1)}%`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Sixth Row - AI Q&A */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm"
+          >
+            <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
+              <Brain className="w-5 h-5 text-purple-600" />
+              <span>AI Portfolio Assistant</span>
+            </h3>
+            
+            {/* Chat Messages */}
+            <div className="space-y-4 mb-4 max-h-64 overflow-y-auto">
+              {chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      message.type === 'user'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-neutral-100 text-neutral-900'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-neutral-100 text-neutral-900 px-4 py-2 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                      <span className="text-sm">AI is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Ask about your portfolio..."
+                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                disabled={isChatLoading}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!chatInput.trim() || isChatLoading}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
