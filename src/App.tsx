@@ -28,5 +28,11 @@ function App() {
     </Router>
   );
 }
+// const payload = {}; // Define the payload object with appropriate data
+// const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/analyze-portfolio`, {
+//   method: "POST",
+//   headers: { "Content-Type": "application/json" },
+//   body: JSON.stringify(payload),
+// });
 
 export default App;

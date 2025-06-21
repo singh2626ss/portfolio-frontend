@@ -14,29 +14,33 @@ import {
   Activity
 } from 'lucide-react';
 
+
 const AboutPage = () => {
   const teamMembers = [
     {
       name: 'Saransh Singh',
-      role: 'Senior Data Scientist & AI Engineer',
-      bio: 'Passionate about leveraging AI and machine learning to solve complex financial problems. Experienced in building scalable data pipelines and implementing advanced analytics solutions.',
+      role: 'Data Scientist',
+      bio: 'I build AI-driven systems that scale. With expertise in ML, big data, and cloud analytics (AWS, GCP, Azure), my work spans predictive modeling, portfolio optimization, and real-time dashboards. Recently developed a multi-agent portfolio analysis tool using Google ADK, deployed with FastAPI and GCP.',
       skills: ['Python', 'Machine Learning', 'Data Engineering', 'Financial Modeling', 'Google Cloud'],
-      github: 'https://github.com/saranshsingh',
-      linkedin: 'https://linkedin.com/in/saranshsingh',
-      email: 'saransh@quantumfin.ai',
-      image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1'
+      github: 'https://github.com/singh2626ss',
+      linkedin: 'https://www.linkedin.com/in/saranshsinghdollar/',
+      email: 'singh2626.ss@gmail.com',
+      image: 'IMG_2192.jpg',
+      quote: '“If it helps even one person feel more confident about their money, it’s worth building.”'
     },
     {
       name: 'Himanshi Kushwaha',
-      role: 'Senior Software Engineer',
-      bio: 'Specializes in building intelligent web applications and implementing cutting-edge AI solutions. Expert in modern web technologies and cloud-native architectures.',
-      skills: ['React', 'TypeScript', 'AI/ML', 'Cloud Computing', 'System Design'],
+      role: 'Software Engineer',
+      bio: 'I craft intelligent web apps powered by real-time data and AI. Skilled in React, TypeScript, FastAPI, and GCP, I led the frontend and backend integration of a multi-agent financial insights platform—deploying fast, personalized analytics through seamless cloud architecture.',
+      skills: ['React', 'TypeScript','Javascript', 'Python', 'Machine Learning', 'Cloud Computing', 'System Design'],
       github: 'https://github.com/himanshikushwaha',
-      linkedin: 'https://linkedin.com/in/himanshikushwaha',
-      email: 'himanshi@quantumfin.ai',
-      image: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1'
+      linkedin: 'https://www.linkedin.com/in/himanshikushwaha/',
+      email: 'himanshikushwaha305@gmail.com',
+      image: '1743038871929.jpeg',
+      quote: '“Good design should help you think less and do more.”'
     }
   ];
+
 
   const projectHighlights = [
     {
@@ -59,6 +63,7 @@ const AboutPage = () => {
   return (
     <div className="min-h-screen pt-8 pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -69,107 +74,11 @@ const AboutPage = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
             About Our Project
           </h1>
-          <p className="text-xl text-neutral-600 max-w-4xl mx-auto leading-relaxed">
+          {/* <p className="text-xl text-neutral-600 max-w-4xl mx-auto leading-relaxed">
             We're building the future of financial analysis through collaborative AI agents. 
             Our platform demonstrates the power of Google's Agent Development Kit in creating intelligent, 
             autonomous systems for investment decision-making.
-          </p>
-        </motion.div>
-
-        {/* Project Vision */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white border border-neutral-200 rounded-2xl p-8 mb-16 shadow-sm"
-        >
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900">Project Vision</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-neutral-900 mb-3">The Challenge</h3>
-              <p className="text-neutral-600 leading-relaxed">
-                Traditional financial analysis tools are often siloed, providing fragmented insights 
-                that don't capture the full complexity of modern markets. Individual investors and 
-                analysts need comprehensive, real-time intelligence that can process vast amounts of 
-                data and provide actionable recommendations.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-neutral-900 mb-3">Our Solution</h3>
-              <p className="text-neutral-600 leading-relaxed">
-                We've created a multi-agent AI system powered by Google's Agent Development Kit that 
-                orchestrates specialized agents for different aspects of financial analysis - market sentiment, 
-                risk assessment, portfolio optimization, and trend prediction. These agents collaborate to 
-                provide holistic, intelligent insights.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Google ADK Importance */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 mb-16"
-        >
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg">
-              <Cpu className="w-6 h-6 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900">Why Google's Agent Development Kit?</h2>
-          </div>
-          <div className="space-y-4">
-            <p className="text-neutral-700 leading-relaxed">
-              Google's Agent Development Kit represents a paradigm shift in AI development, enabling the creation 
-              of autonomous agents that can collaborate, reason, and make decisions independently. In financial analysis, 
-              this translates to unprecedented capabilities:
-            </p>
-            <ul className="space-y-2 text-neutral-700">
-              <li className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span><strong>Collaborative Intelligence:</strong> Multiple agents working together provide more comprehensive analysis than any single AI model</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span><strong>Specialized Expertise:</strong> Each agent focuses on specific domains (risk, sentiment, trends) for deeper insights</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span><strong>Autonomous Decision Making:</strong> Agents can adapt and make decisions based on real-time market conditions</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span><strong>Scalable Architecture:</strong> Google Cloud infrastructure ensures reliable, high-performance processing</span>
-              </li>
-            </ul>
-          </div>
-        </motion.div>
-
-        {/* Project Highlights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mb-16"
-        >
-          <h2 className="text-3xl font-bold text-neutral-900 text-center mb-12">Technical Highlights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {projectHighlights.map((highlight, index) => (
-              <div key={index} className="bg-white border border-neutral-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <highlight.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-3">{highlight.title}</h3>
-                <p className="text-neutral-600 leading-relaxed">{highlight.description}</p>
-              </div>
-            ))}
-          </div>
+          </p> */}
         </motion.div>
 
         {/* Team Section */}
@@ -204,7 +113,11 @@ const AboutPage = () => {
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-neutral-900 mb-1">{member.name}</h3>
                     <p className="text-primary-600 font-semibold mb-3">{member.role}</p>
-                    <p className="text-neutral-600 text-sm leading-relaxed mb-4">{member.bio}</p>
+                    <p className="text-neutral-600 text-sm leading-relaxed mb-2">{member.bio}</p>
+{member.quote && (
+  <p className="italic text-neutral-500 text-sm mb-4">{member.quote}</p>
+)}
+
                     
                     <div className="flex flex-wrap gap-2 mb-4">
                       {member.skills.map((skill, skillIndex) => (
@@ -248,52 +161,209 @@ const AboutPage = () => {
           </div>
         </motion.div>
 
-        {/* Technology Stack */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-          className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm"
-        >
-          <div className="flex items-center justify-center space-x-3 mb-8">
-            <Cpu className="w-6 h-6 text-secondary-600" />
-            <h2 className="text-2xl font-bold text-neutral-900">Technology Stack</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-primary-600 mb-4">Frontend</h3>
-              <ul className="space-y-2 text-neutral-600">
-                <li>• React 18 with TypeScript</li>
-                <li>• Tailwind CSS for styling</li>
-                <li>• Framer Motion for animations</li>
-                <li>• Recharts for data visualization</li>
-                <li>• Deployed on Vercel</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-secondary-600 mb-4">Backend</h3>
-              <ul className="space-y-2 text-neutral-600">
-                <li>• FastAPI with Python</li>
-                <li>• Google Agent Development Kit</li>
-                <li>• Multi-agent orchestration</li>
-                <li>• Real-time data processing</li>
-                <li>• Deployed on Google Cloud Run</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-accent-600 mb-4">AI & Data</h3>
-              <ul className="space-y-2 text-neutral-600">
-                <li>• Machine Learning models</li>
-                <li>• Sentiment analysis</li>
-                <li>• Risk assessment algorithms</li>
-                <li>• Market data APIs</li>
-                <li>• Portfolio optimization</li>
-              </ul>
-            </div>
-          </div>
-        </motion.div>
 
-        {/* Call to Action */}
+{/* Why We Built This */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6, delay: 0.2 }}
+  className="bg-white border border-neutral-200 rounded-2xl p-8 mb-16 shadow-sm"
+>
+  <div className="flex items-center space-x-3 mb-6">
+    <div className="p-2 bg-gradient-to-r from-primary-600 to-accent-600 rounded-lg">
+      <Zap className="w-6 h-6 text-white" />
+    </div>
+    <h2 className="text-2xl font-bold text-neutral-900">Why We Built This</h2>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div>
+      <h3 className="text-lg font-semibold text-neutral-900 mb-3">The Problem</h3>
+      <p className="text-neutral-600 leading-relaxed">
+        For most people, understanding investments is overwhelming. Financial platforms are scattered, 
+        filled with jargon, or require prior knowledge to make sense of. Without a clear overview, it’s hard to know 
+        what to do next or whether your decisions are helping you reach your financial goals.
+      </p>
+      <p className="text-neutral-600 leading-relaxed mt-4">
+        People shouldn’t need to be financial experts or spreadsheet wizards to feel confident about their money.
+        We saw a gap in tools that actually simplify things for everyday investors.
+      </p>
+    </div>
+
+    <div>
+      <h3 className="text-lg font-semibold text-neutral-900 mb-3">Our Vision</h3>
+      <p className="text-neutral-600 leading-relaxed">
+        QuantumFin AI is our first step toward solving that. We’ve built a working prototype that brings together 
+        multiple intelligent agents to handle the complexity so you don’t have to.
+      </p>
+      <p className="text-neutral-600 leading-relaxed mt-4">
+        From live market tracking to risk alerts, from personalized recommendations to sentiment analysis 
+        everything works behind the scenes to give you a clean, single screen view of your portfolio health.
+        Our goal is to make advanced financial insight feel as simple as checking the weather.
+      </p>
+    </div>
+  </div>
+</motion.div>
+ {/* Flowchart Section */}
+ <motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6, delay: 0.45 }}
+  className="mb-24"
+>
+  <div className="text-center mb-8">
+    {/* <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+      Agent Workflow at a Glance
+    </h2> */}
+    <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+      The diagram below shows how various agents collaborate, from fetching live data and analyzing sentiment, to generating reports and personalized insights.
+    </p>
+  </div>
+
+  <div className="flex justify-center">
+    <img 
+      src="FLOWCHART.png" 
+      alt="Agent Workflow Diagram" 
+      className="w-full max-w-6xl rounded-2xl border border-neutral-200 shadow-lg"
+    />
+  </div>
+</motion.div>
+
+{/* Why Google’s Agent Development Kit? */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6, delay: 0.3 }}
+  className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 mb-16"
+>
+  <div className="flex items-center space-x-3 mb-6">
+    <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg">
+      <Cpu className="w-6 h-6 text-white" />
+    </div>
+    <h2 className="text-2xl font-bold text-neutral-900">Why Google’s Agent Development Kit?</h2>
+  </div>
+
+  <div className="space-y-4">
+    <p className="text-neutral-700 leading-relaxed">
+      As part of the ADK x Google Cloud Hackathon, using the Agent Development Kit (ADK) was a core requirement. While it wasn’t our original tool of choice, it ended up being extremely helpful for structuring a system of collaborative AI agents.
+    </p>
+
+    <p className="text-neutral-700 leading-relaxed">
+      In our project, each agent plays a different role—some track live stock prices, some analyze news, and others compute risks or generate insights. ADK gave us a simple way to connect these agents without writing everything from scratch.
+    </p>
+
+    <ul className="space-y-2 text-neutral-700">
+      <li className="flex items-start space-x-2">
+        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+        <span>
+          <strong>Agent-to-Agent Communication:</strong> Built-in messaging made it easy for one agent to request help from another, like asking for sentiment before scoring a stock.
+        </span>
+      </li>
+      <li className="flex items-start space-x-2">
+        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+        <span>
+          <strong>Lightweight and Flexible:</strong> ADK is simpler than some other frameworks like LangChain, but it still gives you memory, prompts, and coordination logic.
+        </span>
+      </li>
+      <li className="flex items-start space-x-2">
+        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+        <span>
+          <strong>Great for Prototyping:</strong> It helped us quickly build and test our idea without needing to engineer a full backend from scratch.
+        </span>
+      </li>
+    </ul>
+
+    <p className="text-neutral-700 leading-relaxed pt-4">
+      While we initially used ADK because the hackathon required it, we found it surprisingly useful for building this kind of multi-agent coordination. It helped bring our prototype to life faster and with better structure.
+    </p>
+  </div>
+</motion.div>
+{/* Project Highlights
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6, delay: 0.4 }}
+  className="mb-16"
+>
+  <h2 className="text-3xl font-bold text-neutral-900 text-center mb-12">Technical Highlights</h2>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    {projectHighlights.map((highlight, index) => (
+      <div
+        key={index}
+        className="bg-white border border-neutral-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-lg transition-shadow"
+      >
+        <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <highlight.icon className="w-8 h-8 text-white" />
+        </div>
+        <h3 className="text-xl font-semibold text-neutral-900 mb-3">{highlight.title}</h3>
+        <p className="text-neutral-600 leading-relaxed">{highlight.description}</p>
+      </div>
+    ))}
+  </div>
+</motion.div> */}
+
+{/* Technology Stack */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6, delay: 0.7 }}
+  className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm"
+>
+  <div className="flex items-center justify-center space-x-3 mb-8">
+    <Cpu className="w-6 h-6 text-secondary-600" />
+    <h2 className="text-2xl font-bold text-neutral-900">Technology Stack</h2>
+  </div>
+  
+
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    {/* Frontend */}
+    <div>
+      <div className="flex items-center space-x-2 mb-4">
+        <Activity className="w-5 h-5 text-primary-600" />
+        <h3 className="text-lg font-semibold text-primary-600">Frontend</h3>
+      </div>
+      <ul className="space-y-2 text-neutral-600">
+        <li>• React 18 (TypeScript)</li>
+        <li>• Tailwind CSS</li>
+        <li>• Framer Motion (animation)</li>
+        <li>• Recharts (data visualization)</li>
+        <li>• Hosted on Vercel</li>
+      </ul>
+    </div>
+
+    {/* Backend */}
+    <div>
+      <div className="flex items-center space-x-2 mb-4">
+        <Zap className="w-5 h-5 text-secondary-600" />
+        <h3 className="text-lg font-semibold text-secondary-600">Backend</h3>
+      </div>
+      <ul className="space-y-2 text-neutral-600">
+        <li>• FastAPI (Python)</li>
+        <li>• Agent Development Kit (Google)</li>
+        <li>• Poetry (dependency management)</li>
+        <li>• Multi-agent orchestration</li>
+        <li>• Google Cloud Run (deployment)</li>
+      </ul>
+    </div>
+
+    {/* AI & Data */}
+    <div>
+      <div className="flex items-center space-x-2 mb-4">
+        <Brain className="w-5 h-5 text-accent-600" />
+        <h3 className="text-lg font-semibold text-accent-600">AI & Data</h3>
+      </div>
+      <ul className="space-y-2 text-neutral-600">
+        <li>• Machine Learning (scikit-learn)</li>
+        <li>• yFinance for pricing data</li>
+        <li>• Finnhub + AlphaVantage APIs</li>
+        <li>• NewsAPI for sentiment signals</li>
+        <li>• Portfolio risk & optimization models</li>
+      </ul>
+    </div>
+  </div>
+</motion.div>
+
+        {/* Call to Action
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,7 +394,7 @@ const AboutPage = () => {
               <span>Get in Touch</span>
             </a>
           </div>
-        </motion.div>
+        </motion.div> */}
       </div>
     </div>
   );

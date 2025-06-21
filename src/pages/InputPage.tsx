@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import StockTicker from '../components/StockTicker'; 
 import { 
   ArrowRight, 
   Target, 
@@ -146,6 +147,9 @@ export default function InputPage() {
   return (
     <div className="min-h-screen pt-8 pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+      <StockTicker />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"></div>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
