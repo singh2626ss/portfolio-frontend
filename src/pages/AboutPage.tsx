@@ -357,7 +357,7 @@ const AboutPage = () => {
       </div>
       <ul className="space-y-2 text-neutral-600">
         <li>• Machine Learning (scikit-learn)</li>
-        <li>• yFinance for pricing data</li>
+        <li>• yFinance for API Fallback</li>
         <li>• Finnhub + AlphaVantage APIs</li>
         <li>• NewsAPI for sentiment signals</li>
         <li>• Portfolio risk & optimization models</li>
