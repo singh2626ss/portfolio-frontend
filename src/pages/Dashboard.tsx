@@ -146,12 +146,16 @@ const Dashboard = () => {
 
   // Enhanced Performance Data - Use the actual performance data from backend
   const performanceData = dashboardData?.visualization_data?.performance ? {
-    labels: dashboardData.visualization_data.performance.x.map((date: string) => 
-      new Date(date).toLocaleDateString()
-    ),
+    labels: dashboardData.visualization_data.performance.x
+      .map((date: string) => new Date(date))
+      .sort((a: Date, b: Date) => a.getTime() - b.getTime())
+      .map((date: Date) => date.toLocaleDateString()),
     datasets: [{
       label: 'Portfolio Value',
-      data: dashboardData.visualization_data.performance.y,
+      data: dashboardData.visualization_data.performance.x
+        .map((date: string, index: number) => ({ date: new Date(date), value: dashboardData.visualization_data.performance.y[index] }))
+        .sort((a: any, b: any) => a.date.getTime() - b.date.getTime())
+        .map((item: any) => item.value),
       borderColor: 'rgb(34, 197, 94)',
       backgroundColor: 'rgba(34, 197, 94, 0.1)',
       fill: true,
@@ -163,6 +167,25 @@ const Dashboard = () => {
       pointHoverRadius: 6
     }]
   } : null;
+
+  // Calculate the actual time period for the performance chart
+  const getPerformancePeriod = () => {
+    if (!dashboardData?.visualization_data?.performance?.x?.length) return 'Portfolio Trend';
+    
+    const dates = dashboardData.visualization_data.performance.x.map((date: string) => new Date(date));
+    const sortedDates = dates.sort((a: Date, b: Date) => a.getTime() - b.getTime());
+    const startDate = sortedDates[0];
+    const endDate = sortedDates[sortedDates.length - 1];
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff <= 30) {
+      return `${daysDiff}-Day Portfolio Trend`;
+    } else if (daysDiff <= 90) {
+      return `${Math.ceil(daysDiff / 30)}-Month Portfolio Trend`;
+    } else {
+      return `${Math.ceil(daysDiff / 365)}-Year Portfolio Trend`;
+    }
+  };
 
   // Sector Allocation Data - Use the actual composition data from backend
   const sectorData = dashboardData?.visualization_data?.composition ? {
@@ -494,7 +517,7 @@ const Dashboard = () => {
               >
                 <h3 className="text-xl font-semibold text-neutral-900 mb-6 flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-green-600" />
-                  <span>Portfolio Performance (30-Day Trend)</span>
+                  <span>{getPerformancePeriod()}</span>
                 </h3>
                 <div className="h-80">
                   {performanceData ? (
