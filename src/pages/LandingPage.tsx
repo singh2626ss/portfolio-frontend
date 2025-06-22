@@ -224,6 +224,11 @@ const techFeatures = [
         />
       ))}
     </div>
+    <div className="mt-6 text-center px-4">
+  <p className="text-sm text-neutral-500 italic">
+    Logos are for illustrative purposes only. We are not affiliated with or endorsed by these companies.
+  </p>
+</div>
   </div>
 </section>
 
@@ -250,7 +255,7 @@ const techFeatures = [
         Your Portfolio, Simplified
       </h2>
       <p className="text-xl text-neutral-600 max-w-4xl mx-auto">
-        From performance tracking to AI-driven Q&A—six interactive tools to manage your investments with ease.
+        From performance tracking to AI-driven Q&A and six interactive tools to manage your investments with ease.
       </p>
     </motion.div>
 
@@ -410,7 +415,7 @@ const techFeatures = [
         Built by People Who Use It Too
       </h2>
       <p className="text-xl text-neutral-600 mb-8">
-        We created this tool to make portfolio tracking and market analysis easier for ourselves—and for anyone else who wants to make better financial decisions without overcomplicating things.
+        We created this tool to make portfolio tracking and market analysis easier for ourselves and for anyone else who wants to make better financial decisions without overcomplicating things.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
         <div className="text-center">
