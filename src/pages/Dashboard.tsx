@@ -312,27 +312,28 @@ const Dashboard = () => {
     setIsChatLoading(true);
 
     try {
+      // Check if we have the required portfolio data
+      if (!dashboardData) {
+        throw new Error('Portfolio analysis data is required for AI insights. Please analyze your portfolio first.');
+      }
+
       const response = await fetch('https://portfolio-backend-959021211199.us-central1.run.app/ai-insights', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_message: chatInput,
-          portfolio_data: {
-            portfolio: portfolioSummary?.positions || [],
-            performance_analysis: dashboardData?.performance_analysis,
-            risk_analysis: dashboardData?.risk_analysis,
-            market_sentiment: dashboardData?.market_sentiment
-          },
-          market_context: {
-            overall_sentiment: dashboardData?.market_sentiment?.overall_sentiment,
-            recent_events: dashboardData?.market_sentiment?.recent_events
-          }
+          user_question: chatInput,
+          portfolio_data: dashboardData, // Complete portfolio analysis response
+          market_context: dashboardData.market_sentiment // Market sentiment data
         }),
       });
 
       if (!response.ok) {
+        if (response.status === 422) {
+          const errorData = await response.json();
+          throw new Error(`Validation error: ${errorData.detail || 'Invalid data format. Please ensure portfolio analysis is complete.'}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -341,9 +342,9 @@ const Dashboard = () => {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: result.response,
+        content: result.nlp_insight || result.response || 'I apologize, but I couldn\'t generate a response at this time.',
         timestamp: new Date(),
-        confidence: result.confidence
+        confidence: result.confidence_score || result.confidence
       };
 
       setChatMessages(prev => [...prev, aiMessage]);
@@ -352,7 +353,7 @@ const Dashboard = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
