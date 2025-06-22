@@ -477,11 +477,11 @@ export default function InputPage() {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6 flex flex-col sm:flex-row gap-4">
+            <div className="pt-6">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/25"
+                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-500 hover:to-secondary-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/25"
               >
                 {isLoading ? (
                   <>
@@ -496,14 +496,6 @@ export default function InputPage() {
                   </>
                 )}
               </button>
-              
-              <Link
-                to="/dashboard"
-                className="sm:w-auto bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900 font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <BarChart3 className="w-5 h-5" />
-                View Sample Analysis
-              </Link>
             </div>
 
             {/* Error Display */}

@@ -423,7 +423,6 @@ const Dashboard = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Brain className="w-8 h-8 text-purple-600" />
-              <h1 className="text-xl font-bold text-neutral-900">AI Portfolio Manager</h1>
             </div>
             <div className="flex items-center space-x-4">
               <button
