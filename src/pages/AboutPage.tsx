@@ -252,7 +252,7 @@ const AboutPage = () => {
     </p>
 
     <p className="text-neutral-700 leading-relaxed">
-      In our project, each agent plays a different role—some track live stock prices, some analyze news, and others compute risks or generate insights. ADK gave us a simple way to connect these agents without writing everything from scratch.
+      In our project, each agent plays a different role some track live stock prices, some analyze news, and others compute risks or generate insights. ADK gave us a simple way to connect these agents without writing everything from scratch.
     </p>
 
     <ul className="space-y-2 text-neutral-700">
